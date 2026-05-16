@@ -111,7 +111,7 @@ export default function Navbar() {
 
         {!isAuthenticated && (
           <p className="hidden sm:block text-sm text-gray-400 font-medium">
-            🚚 Free delivery on orders above $20
+            🚚 Free delivery on orders above ₹499
           </p>
         )}
         {isAuthenticated && user?.role === 'restaurant' && (

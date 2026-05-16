@@ -35,8 +35,8 @@ export default function CartItem({ item }) {
 
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-gray-800 text-sm truncate">{item.name}</p>
-        <p className="text-primary font-bold text-sm">${(item.price * item.quantity).toFixed(2)}</p>
-        <p className="text-xs text-gray-400">${item.price.toFixed(2)} each</p>
+        <p className="text-primary font-bold text-sm">₹{(item.price * item.quantity).toFixed(2)}</p>
+        <p className="text-xs text-gray-400">₹{item.price.toFixed(2)} each</p>
       </div>
 
       <div className="flex items-center gap-2">

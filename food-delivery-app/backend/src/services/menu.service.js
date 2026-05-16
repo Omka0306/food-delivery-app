@@ -1,4 +1,4 @@
-const { ScanCommand, GetCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
+const { ScanCommand, GetCommand, QueryCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
 const { docClient } = require('../config/dynamodb');
 
 const MENU_TABLE = process.env.MENU_TABLE || 'MenuItems';
@@ -31,4 +31,17 @@ async function getMenuItemById(id) {
   return result.Item || null;
 }
 
-module.exports = { getAllMenuItems, getMenuByCategory, getMenuItemById };
+async function updateMenuItemAvailability(id, available) {
+  const result = await docClient.send(
+    new UpdateCommand({
+      TableName: MENU_TABLE,
+      Key: { id },
+      UpdateExpression: 'SET available = :available',
+      ExpressionAttributeValues: { ':available': available },
+      ReturnValues: 'ALL_NEW',
+    })
+  );
+  return result.Attributes;
+}
+
+module.exports = { getAllMenuItems, getMenuByCategory, getMenuItemById, updateMenuItemAvailability };

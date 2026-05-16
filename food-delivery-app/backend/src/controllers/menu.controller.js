@@ -28,4 +28,21 @@ async function getMenuItemById(req, res, next) {
   }
 }
 
-module.exports = { getMenu, getMenuItemById };
+async function toggleMenuItemAvailability(req, res, next) {
+  try {
+    const { itemId } = req.params;
+    const { available } = req.body;
+    if (typeof available !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: '`available` must be a boolean' },
+      });
+    }
+    const updated = await menuService.updateMenuItemAvailability(itemId, available);
+    res.json({ success: true, data: updated });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { getMenu, getMenuItemById, toggleMenuItemAvailability };

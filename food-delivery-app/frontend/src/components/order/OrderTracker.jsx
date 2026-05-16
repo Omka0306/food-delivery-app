@@ -91,12 +91,12 @@ export default function OrderTracker({ order, lastUpdated }) {
               {order.items.map((item, i) => (
                 <div key={i} className="flex justify-between text-sm text-gray-600">
                   <span>{item.name} × {item.quantity}</span>
-                  <span className="font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
+                  <span className="font-semibold">₹{(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
               <div className="border-t pt-2 flex justify-between font-bold text-gray-800">
                 <span>Total</span>
-                <span>${order.total.toFixed(2)}</span>
+                <span>₹{order.total.toFixed(2)}</span>
               </div>
             </div>
           </motion.div>

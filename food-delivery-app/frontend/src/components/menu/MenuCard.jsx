@@ -85,9 +85,24 @@ export default function MenuCard({ item, index }) {
         </div>
 
         <div className="flex items-center justify-between mt-4">
-          <span className="text-xl font-bold text-primary">${item.price.toFixed(2)}</span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xl font-bold text-primary">₹{item.price.toFixed(2)}</span>
+            {item.available === false && (
+              <span className="text-xs font-medium text-red-500 bg-red-50 px-2 py-0.5 rounded-full w-fit">
+                Unavailable
+              </span>
+            )}
+          </div>
 
-          {!inCart ? (
+          {item.available === false ? (
+            <Button
+              size="sm"
+              disabled
+              className="rounded-full px-5 bg-gray-200 text-gray-400 font-semibold cursor-not-allowed"
+            >
+              Unavailable
+            </Button>
+          ) : !inCart ? (
             <Button
               onClick={handleAdd}
               size="sm"

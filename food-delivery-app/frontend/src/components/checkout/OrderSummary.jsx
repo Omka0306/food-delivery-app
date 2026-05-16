@@ -1,8 +1,8 @@
 import { Separator } from '@/components/ui/separator'
 import useCart from '@/hooks/useCart'
 
-const DELIVERY_FEE = 2.99
-const FREE_DELIVERY_THRESHOLD = 20
+const DELIVERY_FEE = 40
+const FREE_DELIVERY_THRESHOLD = 499
 
 export default function OrderSummary() {
   const { items, totalPrice } = useCart()
@@ -23,7 +23,7 @@ export default function OrderSummary() {
               <span className="text-gray-700">{item.name}</span>
             </div>
             <span className="font-semibold text-gray-800 ml-2">
-              ${(item.price * item.quantity).toFixed(2)}
+              ₹{(item.price * item.quantity).toFixed(2)}
             </span>
           </div>
         ))}
@@ -34,14 +34,14 @@ export default function OrderSummary() {
       <div className="space-y-2 text-sm text-gray-600">
         <div className="flex justify-between">
           <span>Subtotal</span>
-          <span>${totalPrice.toFixed(2)}</span>
+          <span>₹{totalPrice.toFixed(2)}</span>
         </div>
         <div className="flex justify-between">
           <span>Delivery fee</span>
           {deliveryFee === 0 ? (
             <span className="text-green-600 font-semibold">FREE 🎉</span>
           ) : (
-            <span>${deliveryFee.toFixed(2)}</span>
+            <span>₹{deliveryFee.toFixed(2)}</span>
           )}
         </div>
       </div>
@@ -50,7 +50,7 @@ export default function OrderSummary() {
 
       <div className="flex justify-between font-bold text-gray-800 text-base">
         <span>Total</span>
-        <span>${grandTotal.toFixed(2)}</span>
+        <span>₹{grandTotal.toFixed(2)}</span>
       </div>
     </div>
   )

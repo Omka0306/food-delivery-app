@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { UtensilsCrossed, ToggleLeft, ToggleRight } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { UtensilsCrossed, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { restaurantApi } from '@/services/api'
 import { useAuthStore } from '@/store/authStore'
 
@@ -11,6 +12,7 @@ const CATEGORY_COLORS = {
   Salads: 'bg-green-50',
   Desserts: 'bg-pink-50',
   Drinks: 'bg-blue-50',
+  Sides: 'bg-amber-50',
   default: 'bg-gray-50',
 }
 
@@ -21,13 +23,15 @@ const CATEGORY_EMOJI = {
   Salads: '🥗',
   Desserts: '🍰',
   Drinks: '🥤',
+  Sides: '🍟',
   default: '🍽️',
 }
 
 export default function RestaurantMenuPage() {
   const { user } = useAuthStore()
   const restaurantId = user?.restaurantId
-  const [localAvailability, setLocalAvailability] = useState({})
+  const queryClient = useQueryClient()
+  const [togglingId, setTogglingId] = useState(null)
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['restaurant-menu', restaurantId],
@@ -38,16 +42,38 @@ export default function RestaurantMenuPage() {
     enabled: !!restaurantId,
   })
 
-  const isAvailable = (item) => {
-    if (item.menuItemId in localAvailability) return localAvailability[item.menuItemId]
-    return item.available !== false
-  }
+  const toggleMutation = useMutation({
+    mutationFn: ({ itemId, available }) =>
+      restaurantApi.toggleMenuAvailability(restaurantId, itemId, available),
+    onMutate: async ({ itemId, available }) => {
+      setTogglingId(itemId)
+      // Optimistic update
+      await queryClient.cancelQueries({ queryKey: ['restaurant-menu', restaurantId] })
+      const previous = queryClient.getQueryData(['restaurant-menu', restaurantId])
+      queryClient.setQueryData(['restaurant-menu', restaurantId], (old) =>
+        (old || []).map((i) => (i.id === itemId ? { ...i, available } : i))
+      )
+      return { previous }
+    },
+    onSuccess: (_, { available }) => {
+      toast.success(available ? 'Item marked as available' : 'Item marked as unavailable')
+    },
+    onError: (err, _, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData(['restaurant-menu', restaurantId], ctx.previous)
+      }
+      toast.error(err.message || 'Failed to update availability')
+    },
+    onSettled: () => {
+      setTogglingId(null)
+      queryClient.invalidateQueries({ queryKey: ['restaurant-menu', restaurantId] })
+    },
+  })
 
   const toggleAvailability = (item) => {
-    setLocalAvailability((prev) => ({
-      ...prev,
-      [item.menuItemId]: !isAvailable(item),
-    }))
+    if (togglingId) return
+    const newAvailable = item.available === false ? true : false
+    toggleMutation.mutate({ itemId: item.id, available: newAvailable })
   }
 
   const categories = [...new Set(items.map((i) => i.category || 'Other'))]
@@ -89,18 +115,20 @@ export default function RestaurantMenuPage() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {catItems.map((item) => {
-                const available = isAvailable(item)
+                const available = item.available !== false
+                const isToggling = togglingId === item.id
+
                 return (
                   <div
-                    key={item.menuItemId}
+                    key={item.id}
                     className={`rounded-2xl border overflow-hidden shadow-sm transition-opacity ${
-                      available ? 'border-gray-100 opacity-100' : 'border-gray-100 opacity-60'
+                      available ? 'border-gray-100 opacity-100' : 'border-gray-200 opacity-60'
                     }`}
                   >
                     <div className={`h-32 flex items-center justify-center text-5xl ${bg}`}>
-                      {item.image ? (
+                      {item.imageUrl ? (
                         <img
-                          src={item.image}
+                          src={item.imageUrl}
                           alt={item.name}
                           className="h-full w-full object-cover"
                           onError={(e) => {
@@ -121,20 +149,28 @@ export default function RestaurantMenuPage() {
                         </div>
                         <button
                           onClick={() => toggleAvailability(item)}
+                          disabled={isToggling}
                           className={`flex-shrink-0 mt-0.5 transition-colors ${
-                            available ? 'text-green-500 hover:text-green-600' : 'text-gray-300 hover:text-gray-400'
+                            isToggling
+                              ? 'text-gray-300 cursor-wait'
+                              : available
+                              ? 'text-green-500 hover:text-green-600'
+                              : 'text-gray-300 hover:text-gray-400'
                           }`}
                           title={available ? 'Mark unavailable' : 'Mark available'}
                         >
-                          {available
-                            ? <ToggleRight className="w-8 h-8" />
-                            : <ToggleLeft className="w-8 h-8" />
-                          }
+                          {isToggling ? (
+                            <Loader2 className="w-8 h-8 animate-spin" />
+                          ) : available ? (
+                            <ToggleRight className="w-8 h-8" />
+                          ) : (
+                            <ToggleLeft className="w-8 h-8" />
+                          )}
                         </button>
                       </div>
                       <div className="mt-2">
                         <span className={`inline-flex text-xs font-medium px-2 py-0.5 rounded-full ${
-                          available ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'
+                          available ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'
                         }`}>
                           {available ? 'Available' : 'Unavailable'}
                         </span>

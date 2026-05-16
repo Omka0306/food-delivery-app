@@ -150,7 +150,7 @@ export default function CheckoutForm() {
             <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Placing Order...
           </>
         ) : (
-          `Place Order • $${(totalPrice + (totalPrice >= 20 ? 0 : 2.99)).toFixed(2)}`
+          `Place Order • ₹${(totalPrice + (totalPrice >= 499 ? 0 : 40)).toFixed(2)}`
         )}
       </Button>
     </form>

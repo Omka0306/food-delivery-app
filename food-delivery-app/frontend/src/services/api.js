@@ -95,6 +95,8 @@ export const restaurantApi = {
   getAnalytics: (id) => apiClient.get(`/restaurants/${id}/analytics`),
   getMenu: (id) => apiClient.get(`/restaurants/${id}/menu`),
   getMenuItems: (id) => apiClient.get(`/restaurants/${id}/menu`),
+  toggleMenuAvailability: (restaurantId, itemId, available) =>
+    apiClient.patch(`/restaurants/${restaurantId}/menu/${itemId}/availability`, { available }),
 }
 
 // ── Admin ───────────────────────────────────────────────────────────────────
