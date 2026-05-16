@@ -1,6 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 
-const RESTAURANT_ID = 'ef250fe0-3aaa-4114-ab95-5c01f7c03ff0';
+const RESTAURANT_ID = 'ddb6d8ad-c007-4fff-8d62-3f13064d4725';
 
 const menuItems = [
   {

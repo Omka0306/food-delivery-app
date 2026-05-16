@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { ordersApi } from '@/services/api'
@@ -14,6 +14,7 @@ const STATUS_TOASTS = {
 export default function useOrderTracking(orderId) {
   const queryClient = useQueryClient()
   const [wsConnected, setWsConnected] = useState(false)
+  const prevStatusRef = useRef(null)
 
   const query = useQuery({
     queryKey: ['order', orderId],
@@ -28,13 +29,27 @@ export default function useOrderTracking(orderId) {
     },
   })
 
+  // Fires on EVERY status change — covers both WebSocket push and HTTP polling paths
+  useEffect(() => {
+    const currentStatus = query.data?.status
+    if (!currentStatus) return
+
+    const prevStatus = prevStatusRef.current
+    prevStatusRef.current = currentStatus
+
+    // Skip the initial population (no previous status to compare against)
+    if (!prevStatus || prevStatus === currentStatus) return
+
+    const msg = STATUS_TOASTS[currentStatus]
+    if (msg) toast.success(msg, { duration: 6000 })
+    if (currentStatus === 'Out for Delivery') playOutForDeliverySound()
+  }, [query.data?.status])
+
+  // WebSocket: update query cache so the useEffect above fires, then set wsConnected on pong
   const handleWsMessage = useCallback(
     (data) => {
       if (data.type === 'ORDER_STATUS_UPDATE' && data.order?.orderId === orderId) {
         queryClient.setQueryData(['order', orderId], data.order)
-        const msg = STATUS_TOASTS[data.order.status]
-        if (msg) toast.success(msg, { duration: 5000 })
-        if (data.order.status === 'Out for Delivery') playOutForDeliverySound()
       }
       if (data.type === 'pong') setWsConnected(true)
     },
@@ -44,6 +59,7 @@ export default function useOrderTracking(orderId) {
   useWebSocket(handleWsMessage)
 
   useEffect(() => {
+    prevStatusRef.current = null
     setWsConnected(false)
   }, [orderId])
 

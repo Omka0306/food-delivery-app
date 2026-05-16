@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import OrderTracker from '@/components/order/OrderTracker'
 import useOrderTracking from '@/hooks/useOrderTracking'
+import { unlockAudio } from '@/utils/sounds'
 
 export default function OrderStatusPage() {
   const { orderId } = useParams()
@@ -13,6 +14,10 @@ export default function OrderStatusPage() {
 
   useEffect(() => {
     document.title = 'Track Order — QuickBite'
+    // Unlock AudioContext on first user interaction so notification sounds work
+    const unlock = () => { unlockAudio(); document.removeEventListener('click', unlock) }
+    document.addEventListener('click', unlock)
+    return () => document.removeEventListener('click', unlock)
   }, [])
 
   useEffect(() => {
