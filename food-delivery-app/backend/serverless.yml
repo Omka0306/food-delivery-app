@@ -1,0 +1,103 @@
+service: food-delivery-api
+
+frameworkVersion: '3'
+
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ${env:AWS_REGION, 'ap-south-1'}
+  timeout: 30
+  memorySize: 256
+  environment:
+    MENU_TABLE: ${self:custom.menuTable}
+    ORDERS_TABLE: ${self:custom.ordersTable}
+    RESTAURANTS_TABLE: ${self:custom.restaurantsTable}
+    USER_PROFILES_TABLE: ${self:custom.userProfilesTable}
+    WEBSOCKET_TABLE: ${self:custom.wsTable}
+    COGNITO_REGION: ${self:provider.region}
+    COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID, ''}
+    COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID, ''}
+    WEBSOCKET_ENDPOINT: ${env:WEBSOCKET_ENDPOINT, ''}
+    NODE_ENV: production
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:Scan
+            - dynamodb:Query
+          Resource:
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.menuTable}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.menuTable}/index/*
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.ordersTable}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.ordersTable}/index/*
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.restaurantsTable}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.userProfilesTable}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.wsTable}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.wsTable}/index/*
+        - Effect: Allow
+          Action:
+            - execute-api:ManageConnections
+          Resource:
+            - arn:aws:execute-api:${self:provider.region}:*:${env:WEBSOCKET_API_ID, '*'}/*
+        - Effect: Allow
+          Action:
+            - cognito-idp:SignUp
+            - cognito-idp:ConfirmSignUp
+            - cognito-idp:InitiateAuth
+            - cognito-idp:GlobalSignOut
+            - cognito-idp:ResendConfirmationCode
+            - cognito-idp:AdminUpdateUserAttributes
+            - cognito-idp:AdminAddUserToGroup
+            - cognito-idp:AdminGetUser
+            - cognito-idp:AdminDeleteUser
+          Resource:
+            - arn:aws:cognito-idp:${self:provider.region}:*:userpool/${env:COGNITO_USER_POOL_ID}
+
+custom:
+  menuTable: MenuItems
+  ordersTable: Orders
+  restaurantsTable: Restaurants
+  userProfilesTable: UserProfiles
+  wsTable: WebSocketConnections
+
+functions:
+  api:
+    handler: src/lambda.handler
+    events:
+      - httpApi:
+          path: /
+          method: ANY
+      - httpApi:
+          path: /{proxy+}
+          method: ANY
+
+  wsConnect:
+    handler: src/websocket/handler.onConnect
+    events:
+      - websocket:
+          route: $connect
+
+  wsDisconnect:
+    handler: src/websocket/handler.onDisconnect
+    events:
+      - websocket:
+          route: $disconnect
+
+  wsMessage:
+    handler: src/websocket/handler.onMessage
+    events:
+      - websocket:
+          route: $default
+
+resources:
+  Outputs:
+    ApiEndpoint:
+      Description: HTTP API Gateway endpoint URL
+      Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
