@@ -1,0 +1,101 @@
+name: Backend CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-cd.yml'
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  deploy-staging:
+    name: Deploy → Staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://console.aws.amazon.com/lambda
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Deploy to staging
+        run: npx serverless deploy --stage dev --verbose
+        env:
+          COGNITO_USER_POOL_ID: ${{ secrets.COGNITO_USER_POOL_ID }}
+          COGNITO_CLIENT_ID: ${{ secrets.COGNITO_CLIENT_ID }}
+          OPENSEARCH_ENDPOINT: ${{ secrets.OPENSEARCH_ENDPOINT }}
+          OPENSEARCH_INDEX: ${{ secrets.OPENSEARCH_INDEX }}
+          WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
+          WEBSOCKET_API_ID: ${{ secrets.WEBSOCKET_API_ID }}
+
+      - name: Print deployment info
+        run: npx serverless info --stage dev
+
+  deploy-production:
+    name: Deploy → Production
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://console.aws.amazon.com/lambda
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Deploy to production
+        run: npx serverless deploy --stage prod --verbose
+        env:
+          COGNITO_USER_POOL_ID: ${{ secrets.COGNITO_USER_POOL_ID }}
+          COGNITO_CLIENT_ID: ${{ secrets.COGNITO_CLIENT_ID }}
+          OPENSEARCH_ENDPOINT: ${{ secrets.OPENSEARCH_ENDPOINT }}
+          OPENSEARCH_INDEX: ${{ secrets.OPENSEARCH_INDEX }}
+          WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
+          WEBSOCKET_API_ID: ${{ secrets.WEBSOCKET_API_ID }}
+
+      - name: Print deployment info
+        run: npx serverless info --stage prod
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Production deployment FAILED on commit ${{ github.sha }}"
+          echo "Check the run at ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

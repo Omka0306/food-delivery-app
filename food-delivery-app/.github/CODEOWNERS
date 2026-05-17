@@ -1,0 +1,12 @@
+# Global owners — required reviewers for every PR
+* @patilomkar0306
+
+# Backend — API, Lambda, AI engine
+/backend/ @patilomkar0306
+
+# Frontend — React app
+/frontend/ @patilomkar0306
+
+# Infrastructure / CI
+/.github/ @patilomkar0306
+/scripts/ @patilomkar0306

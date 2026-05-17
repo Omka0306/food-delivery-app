@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Food Delivery Order Management API
+
+Globals:
+  Function:
+    Runtime: nodejs18.x
+    Timeout: 30
+    MemorySize: 256
+    Environment:
+      Variables:
+        MENU_TABLE: !Ref MenuItemsTable
+        ORDERS_TABLE: !Ref OrdersTable
+        AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1'
+        NODE_ENV: production
+
+Resources:
+  FoodDeliveryApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/lambda.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MenuItemsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrdersTable
+      Events:
+        ProxyRoot:
+          Type: Api
+          Properties:
+            Path: /
+            Method: ANY
+        ProxyAny:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+
+  MenuItemsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: MenuItems
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  OrdersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Orders
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: orderId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: orderId
+          KeyType: HASH
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/'

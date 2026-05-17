@@ -1,0 +1,11 @@
+{
+  "name": "food-delivery-app",
+  "version": "1.0.0",
+  "description": "QuickBite — full-stack food delivery app with AI recommendations",
+  "private": true,
+  "scripts": {
+    "lint": "npm run lint --prefix backend && npm run lint --prefix frontend",
+    "test": "npm run test --prefix backend && npm run test --prefix frontend",
+    "validate": "bash scripts/validate-pipelines.sh"
+  }
+}
