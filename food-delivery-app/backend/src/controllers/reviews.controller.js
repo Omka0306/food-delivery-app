@@ -3,10 +3,10 @@ const reviewsService = require('../services/reviews.service');
 async function createReview(req, res, next) {
   try {
     const { menuItemId, restaurantId, orderId, rating, comment } = req.body;
-    if (!menuItemId || !restaurantId || !rating) {
+    if (!restaurantId || !rating) {
       return res.status(400).json({
         success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'menuItemId, restaurantId, and rating are required' },
+        error: { code: 'VALIDATION_ERROR', message: 'restaurantId and rating are required' },
       });
     }
     if (rating < 1 || rating > 5) {
@@ -16,7 +16,7 @@ async function createReview(req, res, next) {
       });
     }
     const review = await reviewsService.createReview({
-      menuItemId,
+      menuItemId: menuItemId || null,
       restaurantId,
       orderId: orderId || null,
       customerId: req.user.userId,

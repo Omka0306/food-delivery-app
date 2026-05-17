@@ -78,10 +78,9 @@ function OrderCard({ order, onRate }) {
               <Button
                 size="sm"
                 onClick={() => onRate(order)}
-                className="bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200 rounded-xl text-xs font-semibold"
-                variant="ghost"
+                className="bg-amber-400 hover:bg-amber-500 text-white rounded-xl text-xs font-semibold shadow-sm"
               >
-                <Star className="w-3 h-3 mr-1" /> Rate Items
+                <Star className="w-3 h-3 mr-1 fill-white" /> Rate Items
               </Button>
             )
           )}
