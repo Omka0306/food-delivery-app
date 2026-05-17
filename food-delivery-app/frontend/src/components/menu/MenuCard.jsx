@@ -21,13 +21,53 @@ const fallbackEmojis = {
 }
 
 export default function MenuCard({ item, index }) {
-  const { addItem, incrementQuantity, decrementQuantity, isInCart, getQuantity } = useCart()
+  const {
+    addItem, clearCartAndAdd,
+    incrementQuantity, decrementQuantity,
+    isInCart, getQuantity,
+    cartRestaurantId,
+  } = useCart()
   const [imgError, setImgError] = useState(false)
-  const inCart  = isInCart(item.id)
-  const qty     = getQuantity(item.id)
+  const inCart = isInCart(item.id)
+  const qty    = getQuantity(item.id)
 
   const handleAdd = () => {
-    addItem(item)
+    const added = addItem(item)
+
+    if (added === false) {
+      // Different restaurant — ask user to confirm
+      toast(
+        (t) => (
+          <div className="flex flex-col gap-2 text-sm">
+            <p className="font-semibold text-gray-800">Start a new cart?</p>
+            <p className="text-gray-500 text-xs">
+              Your cart has items from another restaurant. Adding this will clear it.
+            </p>
+            <div className="flex gap-2 mt-1">
+              <button
+                onClick={() => {
+                  clearCartAndAdd(item)
+                  toast.dismiss(t.id)
+                  toast.success(`${fallbackEmojis[item.category] || '🍽️'} ${item.name} added!`)
+                }}
+                className="flex-1 bg-primary text-white text-xs font-bold py-1.5 rounded-lg hover:bg-orange-600 transition-colors"
+              >
+                Clear & Add
+              </button>
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                className="flex-1 bg-gray-100 text-gray-700 text-xs font-bold py-1.5 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ),
+        { duration: 8000, style: { maxWidth: 320 } }
+      )
+      return
+    }
+
     toast.success(`${fallbackEmojis[item.category] || '🍽️'} ${item.name} added to cart!`, {
       duration: 2000,
     })
@@ -59,20 +99,13 @@ export default function MenuCard({ item, index }) {
               fallbackColors[item.category] || 'from-gray-400 to-gray-500'
             } flex items-center justify-center`}
           >
-            <span className="text-7xl">
-              {fallbackEmojis[item.category] || '🍽️'}
-            </span>
+            <span className="text-7xl">{fallbackEmojis[item.category] || '🍽️'}</span>
           </div>
         )}
 
-        {/* Category badge */}
         <div className="absolute top-3 left-3">
-          <Badge variant="warning" className="text-xs font-semibold">
-            {item.category}
-          </Badge>
+          <Badge variant="warning" className="text-xs font-semibold">{item.category}</Badge>
         </div>
-
-        {/* Rating badge */}
         <div className="absolute top-3 right-3">
           <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
             <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
@@ -80,21 +113,15 @@ export default function MenuCard({ item, index }) {
           </div>
         </div>
 
-        {/* Veg / Non-veg indicator */}
+        {/* Veg / Non-veg dot */}
         <div className="absolute bottom-2 left-3">
           <div
-            className={`w-5 h-5 rounded-sm border-2 flex items-center justify-center ${
-              item.isVeg
-                ? 'border-green-600 bg-white'
-                : 'border-red-600 bg-white'
+            className={`w-5 h-5 rounded-sm border-2 flex items-center justify-center bg-white ${
+              item.isVeg ? 'border-green-600' : 'border-red-600'
             }`}
             title={item.isVeg ? 'Vegetarian' : 'Non-Vegetarian'}
           >
-            <div
-              className={`w-2.5 h-2.5 rounded-full ${
-                item.isVeg ? 'bg-green-600' : 'bg-red-600'
-              }`}
-            />
+            <div className={`w-2.5 h-2.5 rounded-full ${item.isVeg ? 'bg-green-600' : 'bg-red-600'}`} />
           </div>
         </div>
       </div>
@@ -119,11 +146,7 @@ export default function MenuCard({ item, index }) {
           </div>
 
           {isUnavailable ? (
-            <Button
-              size="sm"
-              disabled
-              className="rounded-full px-5 bg-gray-200 text-gray-400 font-semibold cursor-not-allowed"
-            >
+            <Button size="sm" disabled className="rounded-full px-5 bg-gray-200 text-gray-400 cursor-not-allowed">
               Unavailable
             </Button>
           ) : !inCart ? (
@@ -136,10 +159,7 @@ export default function MenuCard({ item, index }) {
               <Plus className="w-4 h-4 mr-1" /> Add
             </Button>
           ) : (
-            <div
-              className="flex items-center gap-2 bg-orange-50 rounded-full px-2 py-1"
-              data-testid="qty-control"
-            >
+            <div className="flex items-center gap-2 bg-orange-50 rounded-full px-2 py-1" data-testid="qty-control">
               <button
                 onClick={() => decrementQuantity(item.id)}
                 className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center hover:bg-orange-600 transition-colors"
@@ -147,10 +167,7 @@ export default function MenuCard({ item, index }) {
               >
                 <Minus className="w-3 h-3" />
               </button>
-              <span
-                className="w-5 text-center font-bold text-gray-800 text-sm"
-                data-testid="qty-value"
-              >
+              <span className="w-5 text-center font-bold text-gray-800 text-sm" data-testid="qty-value">
                 {qty}
               </span>
               <button

@@ -97,6 +97,12 @@ export const restaurantApi = {
   getMenuItems: (id) => apiClient.get(`/restaurants/${id}/menu`),
   toggleMenuAvailability: (restaurantId, itemId, available) =>
     apiClient.patch(`/restaurants/${restaurantId}/menu/${itemId}/availability`, { available }),
+  createMenuItem: (restaurantId, data) =>
+    apiClient.post(`/restaurants/${restaurantId}/menu`, data),
+  updateMenuItem: (restaurantId, itemId, data) =>
+    apiClient.patch(`/restaurants/${restaurantId}/menu/${itemId}`, data),
+  deleteMenuItem: (restaurantId, itemId) =>
+    apiClient.delete(`/restaurants/${restaurantId}/menu/${itemId}`),
 }
 
 // ── Admin ───────────────────────────────────────────────────────────────────

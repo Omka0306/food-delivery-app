@@ -109,10 +109,33 @@ export default function Navbar() {
           <span className="text-xl font-bold text-primary tracking-tight">QuickBite</span>
         </Link>
 
-        {!isAuthenticated && (
-          <p className="hidden sm:block text-sm text-gray-400 font-medium">
-            🚚 Free delivery on orders above ₹499
-          </p>
+        {/* Centre nav links — visible for customers / guests */}
+        {(!isAuthenticated || user?.role === 'customer') && (
+          <nav className="hidden sm:flex items-center gap-1">
+            <Link
+              to="/"
+              className="text-sm font-medium text-gray-600 hover:text-primary px-3 py-1.5 rounded-lg hover:bg-orange-50 transition-colors"
+            >
+              Menu
+            </Link>
+            <Link
+              to="/restaurants"
+              className="text-sm font-medium text-gray-600 hover:text-primary px-3 py-1.5 rounded-lg hover:bg-orange-50 transition-colors"
+            >
+              Restaurants
+            </Link>
+          </nav>
+        )}
+
+        {isAuthenticated && user?.role === 'restaurant' && (
+          <span className="hidden sm:flex items-center bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1 rounded-full">
+            🍽️ Restaurant Portal
+          </span>
+        )}
+        {isAuthenticated && user?.role === 'admin' && (
+          <span className="hidden sm:flex items-center bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full">
+            ⚙️ Admin Panel
+          </span>
         )}
         {isAuthenticated && user?.role === 'restaurant' && (
           <span className="hidden sm:flex items-center bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1 rounded-full">

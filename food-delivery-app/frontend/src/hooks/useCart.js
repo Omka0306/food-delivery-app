@@ -13,5 +13,6 @@ export default function useCart() {
     totalPrice,
     isInCart,
     getQuantity,
+    cartRestaurantId: store.restaurantId,
   }
 }

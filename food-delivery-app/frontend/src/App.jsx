@@ -20,6 +20,8 @@ import VerifyEmailPage from '@/pages/auth/VerifyEmailPage'
 import RestaurantRegisterPage from '@/pages/auth/RestaurantRegisterPage'
 
 import MyOrdersPage from '@/pages/customer/MyOrdersPage'
+import RestaurantsPage from '@/pages/RestaurantsPage'
+import RestaurantPublicMenuPage from '@/pages/RestaurantPublicMenuPage'
 
 import RestaurantLayout from '@/layouts/RestaurantLayout'
 import AdminLayout from '@/layouts/AdminLayout'
@@ -102,6 +104,8 @@ export default function App() {
           <Routes location={location} key={location.pathname}>
             {/* Public */}
             <Route path="/" element={<HomePage />} />
+            <Route path="/restaurants" element={<RestaurantsPage />} />
+            <Route path="/restaurants/:restaurantId" element={<RestaurantPublicMenuPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
