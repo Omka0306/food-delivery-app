@@ -9,6 +9,9 @@ import PromoBanner from '@/components/menu/PromoBanner'
 import MenuCard from '@/components/menu/MenuCard'
 import useMenu from '@/hooks/useMenu'
 import { restaurantApi } from '@/services/api'
+import AISearchBar from '@/components/ai/AISearchBar'
+import AIRecommendationResults from '@/components/ai/AIRecommendationResults'
+import { useAIRecommendations } from '@/hooks/useAIRecommendations'
 
 const VEG_FILTERS = [
   { key: 'all',    label: 'All'     },
@@ -24,6 +27,13 @@ export default function HomePage() {
   const [vegFilter, setVegFilter] = useState('all')
   const searchRef      = useRef(null)
   const menuSectionRef = useRef(null)
+  const aiResultsRef   = useRef(null)
+
+  const {
+    recommendations, greeting, tip, context,
+    isLoading: aiLoading, error: aiError,
+    hasSearched, search: aiSearch, clear: aiClear,
+  } = useAIRecommendations()
 
   useEffect(() => { document.title = 'QuickBite — Order Food Online' }, [])
 
@@ -92,6 +102,11 @@ export default function HomePage() {
     setTimeout(() => searchRef.current?.focus(), 400)
   }
 
+  const handleAISearch = (query) => {
+    aiSearch(query)
+    setTimeout(() => aiResultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120)
+  }
+
   const isFiltering = category !== 'All' || search.trim() || vegFilter !== 'all'
 
   return (
@@ -130,6 +145,47 @@ export default function HomePage() {
 
         {/* ── Promo banner ────────────────────────────────── */}
         <PromoBanner onCtaClick={scrollToMenu} />
+
+        {/* ── AI Search bar ───────────────────────────────── */}
+        {import.meta.env.VITE_AI_ENABLED !== 'false' && (
+          <AISearchBar onSearch={handleAISearch} isLoading={aiLoading} />
+        )}
+
+        {/* ── AI Results section ──────────────────────────── */}
+        <AnimatePresence>
+          {(aiLoading || aiError || hasSearched) && (
+            <motion.section
+              ref={aiResultsRef}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
+                  <span className="text-purple-600">✨</span> AI Picks
+                </h2>
+                {hasSearched && !aiLoading && (
+                  <button
+                    onClick={aiClear}
+                    className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              <AIRecommendationResults
+                recommendations={recommendations}
+                greeting={greeting}
+                tip={tip}
+                context={context}
+                isLoading={aiLoading}
+                error={aiError}
+                onRetry={() => {}}
+              />
+            </motion.section>
+          )}
+        </AnimatePresence>
 
         {/* ── Category filter ─────────────────────────────── */}
         <CategoryFilter
@@ -299,6 +355,7 @@ export default function HomePage() {
           )}
         </section>
       </div>
+
     </div>
   )
 }

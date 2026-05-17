@@ -24,13 +24,17 @@ export default function CartItem({ item }) {
       onMouseLeave={() => setHovered(false)}
       data-testid="cart-item"
     >
-      <div className="w-16 h-16 rounded-xl overflow-hidden bg-orange-50 flex-shrink-0">
-        <img
-          src={item.imageUrl}
-          alt={item.name}
-          className="w-full h-full object-cover"
-          onError={(e) => { e.target.style.display = 'none' }}
-        />
+      <div className="w-16 h-16 rounded-xl overflow-hidden bg-orange-50 flex-shrink-0 flex items-center justify-center">
+        {item.imageUrl ? (
+          <img
+            src={item.imageUrl}
+            alt={item.name}
+            className="w-full h-full object-cover"
+            onError={(e) => { e.currentTarget.style.display = 'none' }}
+          />
+        ) : (
+          <span className="text-2xl">🍽️</span>
+        )}
       </div>
 
       <div className="flex-1 min-w-0">

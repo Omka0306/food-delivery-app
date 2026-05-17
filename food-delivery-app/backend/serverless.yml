@@ -21,6 +21,13 @@ provider:
     COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID, ''}
     COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID, ''}
     WEBSOCKET_ENDPOINT: ${env:WEBSOCKET_ENDPOINT, ''}
+    AI_INTERACTIONS_TABLE: ${self:custom.aiInteractionsTable}
+    USER_AI_PROFILES_TABLE: ${self:custom.userAiProfilesTable}
+    OPENSEARCH_ENDPOINT: ${env:OPENSEARCH_ENDPOINT, ''}
+    OPENSEARCH_INDEX: ${env:OPENSEARCH_INDEX, 'menu-embeddings'}
+    WEATHER_API_KEY: ${env:WEATHER_API_KEY, ''}
+    WEATHER_API_URL: ${env:WEATHER_API_URL, 'https://api.openweathermap.org/data/2.5/weather'}
+    AI_DAILY_LIMIT: ${env:AI_DAILY_LIMIT, '100'}
     NODE_ENV: production
   iam:
     role:
@@ -29,6 +36,7 @@ provider:
           Action:
             - dynamodb:PutItem
             - dynamodb:GetItem
+            - dynamodb:BatchGetItem
             - dynamodb:UpdateItem
             - dynamodb:DeleteItem
             - dynamodb:Scan
@@ -43,6 +51,23 @@ provider:
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.wsTable}
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.wsTable}/index/*
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.reviewsTable}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.aiInteractionsTable}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.aiInteractionsTable}/index/*
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.userAiProfilesTable}
+        - Effect: Allow
+          Action:
+            - bedrock:InvokeModel
+            - bedrock:InvokeModelWithResponseStream
+          Resource:
+            - arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v1
+            - arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-pro-v1:0
+            - arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-micro-v1:0
+            - arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-lite-v1:0
+        - Effect: Allow
+          Action:
+            - aoss:APIAccessAll
+          Resource:
+            - arn:aws:aoss:${self:provider.region}:*:collection/*
         - Effect: Allow
           Action:
             - execute-api:ManageConnections
@@ -69,6 +94,8 @@ custom:
   userProfilesTable: UserProfiles
   wsTable: WebSocketConnections
   reviewsTable: Reviews
+  aiInteractionsTable: AIInteractions
+  userAiProfilesTable: UserAIProfiles
 
 functions:
   api:

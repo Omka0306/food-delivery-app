@@ -1,5 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
-const { ScanCommand, GetCommand, PutCommand, UpdateCommand, DeleteCommand } = require('@aws-sdk/lib-dynamodb');
+const { ScanCommand, GetCommand, PutCommand, UpdateCommand, DeleteCommand, BatchGetCommand } = require('@aws-sdk/lib-dynamodb');
 const { docClient } = require('../config/dynamodb');
 
 const MENU_TABLE = process.env.MENU_TABLE || 'MenuItems';
@@ -100,10 +100,24 @@ async function deleteMenuItem(id) {
   await docClient.send(new DeleteCommand({ TableName: MENU_TABLE, Key: { id } }));
 }
 
+async function batchGetMenuItems(ids) {
+  if (!ids || !ids.length) return []
+  const uniqueIds = [...new Set(ids)].slice(0, 100) // DynamoDB batch limit
+  const res = await docClient.send(
+    new BatchGetCommand({
+      RequestItems: {
+        [MENU_TABLE]: { Keys: uniqueIds.map((id) => ({ id })) },
+      },
+    })
+  )
+  return res.Responses?.[MENU_TABLE] || []
+}
+
 module.exports = {
   getAllMenuItems,
   getMenuByCategory,
   getMenuItemById,
+  batchGetMenuItems,
   updateMenuItemAvailability,
   createMenuItem,
   updateMenuItem,
