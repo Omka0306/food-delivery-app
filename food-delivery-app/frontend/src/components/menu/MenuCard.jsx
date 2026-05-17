@@ -7,24 +7,24 @@ import toast from 'react-hot-toast'
 import useCart from '@/hooks/useCart'
 
 const fallbackColors = {
-  Pizza: 'from-orange-400 to-red-400',
+  Pizza:   'from-orange-400 to-red-400',
   Burgers: 'from-yellow-400 to-orange-400',
-  Sides: 'from-green-400 to-teal-400',
-  Drinks: 'from-blue-400 to-cyan-400',
+  Sides:   'from-green-400 to-teal-400',
+  Drinks:  'from-blue-400 to-cyan-400',
 }
 
 const fallbackEmojis = {
-  Pizza: '🍕',
+  Pizza:   '🍕',
   Burgers: '🍔',
-  Sides: '🍟',
-  Drinks: '🥤',
+  Sides:   '🍟',
+  Drinks:  '🥤',
 }
 
 export default function MenuCard({ item, index }) {
   const { addItem, incrementQuantity, decrementQuantity, isInCart, getQuantity } = useCart()
   const [imgError, setImgError] = useState(false)
-  const inCart = isInCart(item.id)
-  const qty = getQuantity(item.id)
+  const inCart  = isInCart(item.id)
+  const qty     = getQuantity(item.id)
 
   const handleAdd = () => {
     addItem(item)
@@ -32,6 +32,8 @@ export default function MenuCard({ item, index }) {
       duration: 2000,
     })
   }
+
+  const isUnavailable = item.available === false
 
   return (
     <motion.div
@@ -62,15 +64,37 @@ export default function MenuCard({ item, index }) {
             </span>
           </div>
         )}
+
+        {/* Category badge */}
         <div className="absolute top-3 left-3">
           <Badge variant="warning" className="text-xs font-semibold">
             {item.category}
           </Badge>
         </div>
+
+        {/* Rating badge */}
         <div className="absolute top-3 right-3">
           <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
             <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
             <span className="text-xs font-bold text-gray-700">{item.rating}</span>
+          </div>
+        </div>
+
+        {/* Veg / Non-veg indicator */}
+        <div className="absolute bottom-2 left-3">
+          <div
+            className={`w-5 h-5 rounded-sm border-2 flex items-center justify-center ${
+              item.isVeg
+                ? 'border-green-600 bg-white'
+                : 'border-red-600 bg-white'
+            }`}
+            title={item.isVeg ? 'Vegetarian' : 'Non-Vegetarian'}
+          >
+            <div
+              className={`w-2.5 h-2.5 rounded-full ${
+                item.isVeg ? 'bg-green-600' : 'bg-red-600'
+              }`}
+            />
           </div>
         </div>
       </div>
@@ -86,15 +110,15 @@ export default function MenuCard({ item, index }) {
 
         <div className="flex items-center justify-between mt-4">
           <div className="flex flex-col gap-0.5">
-            <span className="text-xl font-bold text-primary">₹{item.price.toFixed(2)}</span>
-            {item.available === false && (
+            <span className="text-xl font-bold text-primary">₹{item.price.toFixed(0)}</span>
+            {isUnavailable && (
               <span className="text-xs font-medium text-red-500 bg-red-50 px-2 py-0.5 rounded-full w-fit">
                 Unavailable
               </span>
             )}
           </div>
 
-          {item.available === false ? (
+          {isUnavailable ? (
             <Button
               size="sm"
               disabled

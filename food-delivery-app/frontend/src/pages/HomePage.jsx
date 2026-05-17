@@ -1,92 +1,239 @@
-import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useState, useMemo, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Search, X, Leaf, Drumstick } from 'lucide-react'
 import CategoryFilter from '@/components/menu/CategoryFilter'
 import MenuGrid from '@/components/menu/MenuGrid'
+import PromoBanner from '@/components/menu/PromoBanner'
+import MenuCard from '@/components/menu/MenuCard'
 import useMenu from '@/hooks/useMenu'
 
-const FOOD_EMOJIS = ['🍕', '🍔', '🍟', '🥤', '🍦', '🥗']
+// Veg filter options
+const VEG_FILTERS = [
+  { key: 'all',     label: 'All',     icon: null },
+  { key: 'veg',     label: 'Veg',     icon: 'veg'  },
+  { key: 'nonveg',  label: 'Non-Veg', icon: 'nonveg' },
+]
+
+const BUDGET_THRESHOLD = 99
 
 export default function HomePage() {
-  const [category, setCategory] = useState('All')
-  const { data, isLoading, isError, refetch } = useMenu(category)
+  const [category, setCategory]   = useState('All')
+  const [search,   setSearch]     = useState('')
+  const [vegFilter, setVegFilter] = useState('all')
+  const searchRef                 = useRef(null)
+  const menuSectionRef            = useRef(null)
+
+  const { data: allItems = [], isLoading, isError, refetch } = useMenu(category)
 
   useEffect(() => {
     document.title = 'QuickBite — Order Food Online'
   }, [])
 
+  // Client-side search + veg filter applied on top of category results
+  const filteredItems = useMemo(() => {
+    let items = allItems
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      items = items.filter(
+        (i) =>
+          i.name.toLowerCase().includes(q) ||
+          i.description?.toLowerCase().includes(q) ||
+          i.category?.toLowerCase().includes(q)
+      )
+    }
+    if (vegFilter === 'veg')    items = items.filter((i) => i.isVeg === true)
+    if (vegFilter === 'nonveg') items = items.filter((i) => i.isVeg === false)
+    return items
+  }, [allItems, search, vegFilter])
+
+  // Budget section — only shown when no active search/veg filter and on "All" category
+  const budgetItems = useMemo(
+    () =>
+      category === 'All' && !search.trim() && vegFilter === 'all'
+        ? allItems.filter((i) => i.price < BUDGET_THRESHOLD && i.available !== false)
+        : [],
+    [allItems, category, search, vegFilter]
+  )
+
+  const scrollToMenu = () => {
+    menuSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
+    setTimeout(() => searchRef.current?.focus(), 400)
+  }
+
+  const clearSearch = () => {
+    setSearch('')
+    searchRef.current?.focus()
+  }
+
   return (
-    <div className="min-h-screen bg-surface">
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 py-16 px-4">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <span className="inline-block bg-orange-100 text-primary text-xs font-bold px-3 py-1 rounded-full mb-4 uppercase tracking-wide">
-              🔥 Hot &amp; Fresh
-            </span>
-            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 leading-tight tracking-tight mb-4">
-              Delicious Food,
-              <br />
-              <span className="text-primary">Delivered Fast</span>
-            </h1>
-            <p className="text-gray-500 text-lg mb-6 leading-relaxed">
-              Fresh ingredients, restaurant quality, right to your door.
-            </p>
+    <div className="min-h-screen bg-gray-50">
 
-            <div className="flex gap-6">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-gray-800">12</p>
-                <p className="text-xs text-gray-400 font-medium">Menu Items</p>
-              </div>
-              <div className="w-px bg-gray-200" />
-              <div className="text-center">
-                <p className="text-2xl font-bold text-gray-800">25–35</p>
-                <p className="text-xs text-gray-400 font-medium">Min avg delivery</p>
-              </div>
-              <div className="w-px bg-gray-200" />
-              <div className="text-center">
-                <p className="text-2xl font-bold text-gray-800">4.8★</p>
-                <p className="text-xs text-gray-400 font-medium">Avg rating</p>
-              </div>
-            </div>
-          </motion.div>
+      {/* ── Sticky search bar ───────────────────────────── */}
+      <div className="sticky top-0 z-30 bg-white shadow-sm border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+          <div className="relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <input
+              ref={searchRef}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search for pizza, burgers, drinks…"
+              className="w-full pl-10 pr-10 py-2.5 rounded-full bg-gray-100 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-white transition-all duration-200"
+            />
+            <AnimatePresence>
+              {search && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  onClick={clearSearch}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-4 h-4" />
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-            className="hidden md:flex flex-wrap justify-center gap-4"
-          >
-            {FOOD_EMOJIS.map((emoji, i) => (
-              <motion.div
-                key={i}
-                animate={{ y: [0, -10, 0] }}
-                transition={{ repeat: Infinity, duration: 2 + i * 0.3, delay: i * 0.2 }}
-                className="w-20 h-20 bg-white rounded-2xl shadow-lg flex items-center justify-center text-4xl"
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6 py-5">
+
+        {/* ── Animated promo banner ───────────────────── */}
+        <PromoBanner onCtaClick={scrollToMenu} />
+
+        {/* ── Category filter (circular) ──────────────── */}
+        <div>
+          <CategoryFilter active={category} onChange={(c) => { setCategory(c); setSearch(''); setVegFilter('all') }} />
+        </div>
+
+        {/* ── Veg / Non-veg toggle ────────────────────── */}
+        <div className="flex items-center gap-2">
+          {VEG_FILTERS.map((f) => {
+            const active = vegFilter === f.key
+            return (
+              <motion.button
+                key={f.key}
+                whileTap={{ scale: 0.94 }}
+                onClick={() => setVegFilter(f.key)}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                  active
+                    ? f.key === 'veg'
+                      ? 'bg-green-600 text-white border-green-600 shadow-sm'
+                      : f.key === 'nonveg'
+                      ? 'bg-red-600 text-white border-red-600 shadow-sm'
+                      : 'bg-gray-800 text-white border-gray-800 shadow-sm'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                }`}
               >
-                {emoji}
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+                {f.key === 'veg' && (
+                  <span className={`w-3 h-3 rounded-sm border flex items-center justify-center ${active ? 'border-white' : 'border-green-600'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : 'bg-green-600'}`} />
+                  </span>
+                )}
+                {f.key === 'nonveg' && (
+                  <span className={`w-3 h-3 rounded-sm border flex items-center justify-center ${active ? 'border-white' : 'border-red-600'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : 'bg-red-600'}`} />
+                  </span>
+                )}
+                {f.label}
+              </motion.button>
+            )
+          })}
 
-      {/* Menu section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-1">Our Menu</h2>
-          <p className="text-gray-400 text-sm">Choose from our selection of fresh, delicious meals</p>
+          {/* Active filter count pill */}
+          {(search || vegFilter !== 'all') && (
+            <motion.span
+              initial={{ opacity: 0, scale: 0.7 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="ml-auto text-xs text-gray-400"
+            >
+              {filteredItems.length} result{filteredItems.length !== 1 ? 's' : ''}
+            </motion.span>
+          )}
         </div>
 
-        <div className="mb-6">
-          <CategoryFilter active={category} onChange={setCategory} />
-        </div>
+        {/* ── Meals under ₹99 horizontal section ─────── */}
+        <AnimatePresence>
+          {budgetItems.length > 0 && (
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
+                  Meals under
+                  <span className="bg-orange-100 text-primary px-2 py-0.5 rounded-lg font-extrabold">₹{BUDGET_THRESHOLD}</span>
+                </h2>
+                <button
+                  onClick={() => { setCategory('All'); setVegFilter('all'); setSearch('') }}
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
+                  See All →
+                </button>
+              </div>
 
-        <MenuGrid data={data} isLoading={isLoading} isError={isError} refetch={refetch} />
-      </section>
+              {/* Horizontal scroll strip */}
+              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
+                {budgetItems.map((item, i) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.07 }}
+                    className="flex-shrink-0 w-40 bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100"
+                  >
+                    <div className="relative h-24 overflow-hidden">
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.target.style.display = 'none' }}
+                        loading="lazy"
+                      />
+                      {/* Veg dot */}
+                      <div className="absolute bottom-1.5 left-1.5">
+                        <div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center bg-white ${item.isVeg ? 'border-green-600' : 'border-red-600'}`}>
+                          <div className={`w-2 h-2 rounded-full ${item.isVeg ? 'bg-green-600' : 'bg-red-600'}`} />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-2.5">
+                      <p className="text-xs font-bold text-gray-800 truncate">{item.name}</p>
+                      <p className="text-primary font-extrabold text-sm mt-0.5">₹{item.price}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {/* ── Full menu grid ──────────────────────────── */}
+        <section ref={menuSectionRef}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">
+                {search ? `Results for "${search}"` : category === 'All' ? 'Our Menu' : category}
+              </h2>
+              {!search && (
+                <p className="text-gray-400 text-xs mt-0.5">
+                  Fresh ingredients, restaurant quality, right to your door
+                </p>
+              )}
+            </div>
+            <span className="text-sm text-gray-400 font-medium">{filteredItems.length} items</span>
+          </div>
+
+          <MenuGrid
+            data={filteredItems}
+            isLoading={isLoading}
+            isError={isError}
+            refetch={refetch}
+          />
+        </section>
+      </div>
     </div>
   )
 }
