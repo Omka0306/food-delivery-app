@@ -93,7 +93,6 @@ export default function CheckoutForm() {
           quantity:   i.quantity,
           name:       i.name,
           price:      i.price,
-          category:   i.category,
         })),
       }
       return ordersApi.place(payload)
