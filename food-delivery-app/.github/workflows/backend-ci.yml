@@ -1,0 +1,116 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+  test:
+    name: Test & Coverage
+    runs-on: ubuntu-latest
+    needs: lint
+
+    services:
+      dynamodb-local:
+        image: amazon/dynamodb-local:latest
+        ports:
+          - 8000:8000
+        options: >-
+          --health-cmd "curl -f http://localhost:8000/shell/ || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      AWS_REGION: ap-south-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      DYNAMODB_LOCAL_ENDPOINT: http://localhost:8000
+      MENU_TABLE: menu-items-test
+      ORDERS_TABLE: orders-test
+      RESTAURANTS_TABLE: restaurants-test
+      USER_PROFILES_TABLE: user-profiles-test
+      WEBSOCKET_TABLE: websocket-connections-test
+      REVIEWS_TABLE: reviews-test
+      AI_INTERACTIONS_TABLE: ai-interactions-test
+      USER_AI_PROFILES_TABLE: user-ai-profiles-test
+      COGNITO_USER_POOL_ID: us-east-1_test
+      COGNITO_CLIENT_ID: test-client-id
+      OPENSEARCH_ENDPOINT: ''
+      WEATHER_API_KEY: test-key
+      AI_DAILY_LIMIT: '100'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup local DynamoDB tables
+        run: node src/scripts/setupLocalTables.js
+
+      - name: Run tests with coverage
+        run: npm run test:ci
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage
+          path: backend/coverage/
+          retention-days: 7
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            node -e "
+              const s = require('./coverage/coverage-summary.json').total;
+              console.log('Lines:      ' + s.lines.pct + '%');
+              console.log('Statements: ' + s.statements.pct + '%');
+              console.log('Functions:  ' + s.functions.pct + '%');
+              console.log('Branches:   ' + s.branches.pct + '%');
+            "
+          fi

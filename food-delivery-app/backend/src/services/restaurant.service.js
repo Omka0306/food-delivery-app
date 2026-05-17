@@ -1,5 +1,4 @@
 const {
-  PutCommand,
   GetCommand,
   UpdateCommand,
   ScanCommand,

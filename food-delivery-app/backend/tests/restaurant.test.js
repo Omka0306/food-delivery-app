@@ -12,7 +12,6 @@ jest.mock('../src/services/orders.service');
 const request = require('supertest');
 const app = require('../src/app');
 const restaurantService = require('../src/services/restaurant.service');
-const ordersService = require('../src/services/orders.service');
 
 const CUSTOMER_TOKEN = 'customer-token';
 const OWNER_TOKEN = 'owner-token';

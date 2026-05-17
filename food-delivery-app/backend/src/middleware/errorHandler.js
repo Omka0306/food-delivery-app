@@ -11,7 +11,7 @@ const COGNITO_ERROR_MAP = {
   InvalidParameterException:    { status: 400, code: 'INVALID_PARAMETER',  message: null },
 };
 
-function errorHandler(err, req, res, next) {
+function errorHandler(err, req, res, _next) {
   console.error(err.stack || err.message);
 
   const cognitoError = COGNITO_ERROR_MAP[err.name];

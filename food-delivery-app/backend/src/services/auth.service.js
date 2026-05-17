@@ -29,7 +29,7 @@ async function deleteUnconfirmedCognitoUser(email) {
         new AdminDeleteUserCommand({ UserPoolId: USER_POOL_ID, Username: email })
       );
     }
-  } catch (_) {}
+  } catch (_) { /* swallow cleanup errors */ }
 }
 
 async function register({ email, password, name, phone }) {
