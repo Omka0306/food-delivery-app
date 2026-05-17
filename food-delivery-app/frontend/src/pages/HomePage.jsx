@@ -1,42 +1,56 @@
 import { useEffect, useState, useMemo, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, X, Leaf, Drumstick } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { Search, X, ChevronRight, Star, Clock } from 'lucide-react'
 import CategoryFilter from '@/components/menu/CategoryFilter'
 import MenuGrid from '@/components/menu/MenuGrid'
 import PromoBanner from '@/components/menu/PromoBanner'
 import MenuCard from '@/components/menu/MenuCard'
 import useMenu from '@/hooks/useMenu'
+import { restaurantApi } from '@/services/api'
 
-// Veg filter options
 const VEG_FILTERS = [
-  { key: 'all',     label: 'All',     icon: null },
-  { key: 'veg',     label: 'Veg',     icon: 'veg'  },
-  { key: 'nonveg',  label: 'Non-Veg', icon: 'nonveg' },
+  { key: 'all',    label: 'All'     },
+  { key: 'veg',    label: 'Veg'     },
+  { key: 'nonveg', label: 'Non-Veg' },
 ]
 
 const BUDGET_THRESHOLD = 99
 
 export default function HomePage() {
-  const [category, setCategory]   = useState('All')
-  const [search,   setSearch]     = useState('')
+  const [category,  setCategory]  = useState('All')
+  const [search,    setSearch]    = useState('')
   const [vegFilter, setVegFilter] = useState('all')
-  const searchRef                 = useRef(null)
-  const menuSectionRef            = useRef(null)
+  const searchRef      = useRef(null)
+  const menuSectionRef = useRef(null)
 
-  // Fetch all items once (category='All') and filter client-side
-  // so the category tabs reflect what's actually in the menu
+  useEffect(() => { document.title = 'QuickBite — Order Food Online' }, [])
+
+  // Fetch all menu items (unfiltered) — we filter client-side
   const { data: allItems = [], isLoading, isError, refetch } = useMenu('All')
+
+  // Fetch restaurants to show name alongside each item group
+  const { data: restaurants = [] } = useQuery({
+    queryKey: ['restaurants-home'],
+    queryFn: async () => {
+      const res = await restaurantApi.getAll({ status: 'active' })
+      return res.data.data
+    },
+    staleTime: 5 * 60 * 1000,
+  })
+
+  // restaurantId → restaurant object lookup
+  const restaurantMap = useMemo(
+    () => Object.fromEntries(restaurants.map((r) => [r.restaurantId, r])),
+    [restaurants]
+  )
 
   const availableCategories = useMemo(
     () => [...new Set(allItems.map((i) => i.category).filter(Boolean))].sort(),
     [allItems]
   )
 
-  useEffect(() => {
-    document.title = 'QuickBite — Order Food Online'
-  }, [])
-
-  // Client-side filtering — category + search + veg all applied locally
   const filteredItems = useMemo(() => {
     let items = allItems
     if (category !== 'All') items = items.filter((i) => i.category === category)
@@ -54,7 +68,17 @@ export default function HomePage() {
     return items
   }, [allItems, category, search, vegFilter])
 
-  // Budget section — only shown when no active search/veg filter and on "All" category
+  // Group items by restaurant (preserves "each order goes to one place" principle)
+  const itemsByRestaurant = useMemo(() => {
+    const groups = {}
+    for (const item of filteredItems) {
+      const rid = item.restaurantId || '__unknown__'
+      if (!groups[rid]) groups[rid] = []
+      groups[rid].push(item)
+    }
+    return groups
+  }, [filteredItems])
+
   const budgetItems = useMemo(
     () =>
       category === 'All' && !search.trim() && vegFilter === 'all'
@@ -68,10 +92,7 @@ export default function HomePage() {
     setTimeout(() => searchRef.current?.focus(), 400)
   }
 
-  const clearSearch = () => {
-    setSearch('')
-    searchRef.current?.focus()
-  }
+  const isFiltering = category !== 'All' || search.trim() || vegFilter !== 'all'
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -85,7 +106,7 @@ export default function HomePage() {
               ref={searchRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search for pizza, burgers, drinks…"
+              placeholder="Search for dosa, biryani, burger…"
               className="w-full pl-10 pr-10 py-2.5 rounded-full bg-gray-100 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-white transition-all duration-200"
             />
             <AnimatePresence>
@@ -94,7 +115,7 @@ export default function HomePage() {
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
-                  onClick={clearSearch}
+                  onClick={() => { setSearch(''); searchRef.current?.focus() }}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   <X className="w-4 h-4" />
@@ -107,20 +128,18 @@ export default function HomePage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6 py-5">
 
-        {/* ── Animated promo banner ───────────────────── */}
+        {/* ── Promo banner ────────────────────────────────── */}
         <PromoBanner onCtaClick={scrollToMenu} />
 
-        {/* ── Category filter (circular, dynamic) ────── */}
-        <div>
-          <CategoryFilter
-            active={category}
-            categories={availableCategories}
-            onChange={(c) => { setCategory(c); setSearch(''); setVegFilter('all') }}
-          />
-        </div>
+        {/* ── Category filter ─────────────────────────────── */}
+        <CategoryFilter
+          active={category}
+          categories={availableCategories}
+          onChange={(c) => { setCategory(c); setSearch(''); setVegFilter('all') }}
+        />
 
-        {/* ── Veg / Non-veg toggle ────────────────────── */}
-        <div className="flex items-center gap-2">
+        {/* ── Veg / Non-veg toggle ────────────────────────── */}
+        <div className="flex items-center gap-2 flex-wrap">
           {VEG_FILTERS.map((f) => {
             const active = vegFilter === f.key
             return (
@@ -130,11 +149,9 @@ export default function HomePage() {
                 onClick={() => setVegFilter(f.key)}
                 className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
                   active
-                    ? f.key === 'veg'
-                      ? 'bg-green-600 text-white border-green-600 shadow-sm'
-                      : f.key === 'nonveg'
-                      ? 'bg-red-600 text-white border-red-600 shadow-sm'
-                      : 'bg-gray-800 text-white border-gray-800 shadow-sm'
+                    ? f.key === 'veg'    ? 'bg-green-600 text-white border-green-600 shadow-sm'
+                    : f.key === 'nonveg' ? 'bg-red-600 text-white border-red-600 shadow-sm'
+                    :                     'bg-gray-800 text-white border-gray-800 shadow-sm'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
                 }`}
               >
@@ -152,59 +169,34 @@ export default function HomePage() {
               </motion.button>
             )
           })}
-
-          {/* Active filter count pill */}
-          {(search || vegFilter !== 'all') && (
-            <motion.span
-              initial={{ opacity: 0, scale: 0.7 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="ml-auto text-xs text-gray-400"
-            >
+          {isFiltering && (
+            <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="ml-auto text-xs text-gray-400">
               {filteredItems.length} result{filteredItems.length !== 1 ? 's' : ''}
             </motion.span>
           )}
         </div>
 
-        {/* ── Meals under ₹99 horizontal section ─────── */}
+        {/* ── Meals under ₹99 strip ───────────────────────── */}
         <AnimatePresence>
           {budgetItems.length > 0 && (
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-            >
+            <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
                   Meals under
                   <span className="bg-orange-100 text-primary px-2 py-0.5 rounded-lg font-extrabold">₹{BUDGET_THRESHOLD}</span>
                 </h2>
-                <button
-                  onClick={() => { setCategory('All'); setVegFilter('all'); setSearch('') }}
-                  className="text-xs font-semibold text-primary hover:underline"
-                >
-                  See All →
-                </button>
+                <button onClick={() => { setCategory('All'); setVegFilter('all'); setSearch('') }}
+                  className="text-xs font-semibold text-primary hover:underline">See All →</button>
               </div>
-
-              {/* Horizontal scroll strip */}
               <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
                 {budgetItems.map((item, i) => (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
+                  <motion.div key={item.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.07 }}
                     className="flex-shrink-0 w-40 bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100"
                   >
-                    <div className="relative h-24 overflow-hidden">
-                      <img
-                        src={item.imageUrl}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.target.style.display = 'none' }}
-                        loading="lazy"
-                      />
-                      {/* Veg dot */}
+                    <div className="relative h-24 overflow-hidden bg-orange-50">
+                      <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover"
+                        onError={(e) => { e.target.style.display = 'none' }} loading="lazy" />
                       <div className="absolute bottom-1.5 left-1.5">
                         <div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center bg-white ${item.isVeg ? 'border-green-600' : 'border-red-600'}`}>
                           <div className={`w-2 h-2 rounded-full ${item.isVeg ? 'bg-green-600' : 'bg-red-600'}`} />
@@ -222,28 +214,89 @@ export default function HomePage() {
           )}
         </AnimatePresence>
 
-        {/* ── Full menu grid ──────────────────────────── */}
-        <section ref={menuSectionRef}>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-bold text-gray-800">
-                {search ? `Results for "${search}"` : category === 'All' ? 'Our Menu' : category}
-              </h2>
-              {!search && (
-                <p className="text-gray-400 text-xs mt-0.5">
-                  Fresh ingredients, restaurant quality, right to your door
-                </p>
-              )}
+        {/* ── Menu — grouped by restaurant ────────────────── */}
+        <section ref={menuSectionRef} className="space-y-10">
+          {isLoading ? (
+            <MenuGrid data={[]} isLoading isError={false} refetch={refetch} />
+          ) : isError ? (
+            <MenuGrid data={[]} isLoading={false} isError refetch={refetch} />
+          ) : filteredItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+              <span className="text-6xl">🍽️</span>
+              <p className="text-gray-500 font-medium text-lg">No items found</p>
             </div>
-            <span className="text-sm text-gray-400 font-medium">{filteredItems.length} items</span>
-          </div>
+          ) : (
+            Object.entries(itemsByRestaurant).map(([rid, items], groupIdx) => {
+              const restaurant = restaurantMap[rid]
+              return (
+                <motion.div
+                  key={rid}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: groupIdx * 0.08 }}
+                >
+                  {/* Restaurant header — only shown when multiple restaurants exist */}
+                  {Object.keys(itemsByRestaurant).length > 1 && (
+                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-xl">
+                          {restaurant ? '🍽️' : '❓'}
+                        </div>
+                        <div>
+                          <h2 className="text-base font-bold text-gray-800">
+                            {restaurant?.name || 'Unknown Restaurant'}
+                          </h2>
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                            {restaurant?.rating && (
+                              <span className="flex items-center gap-0.5">
+                                <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                                {restaurant.rating}
+                              </span>
+                            )}
+                            <span className="flex items-center gap-0.5">
+                              <Clock className="w-3 h-3" /> 25–35 min
+                            </span>
+                            <span className={`font-semibold ${restaurant?.isOpen ? 'text-green-600' : 'text-red-400'}`}>
+                              {restaurant?.isOpen ? 'Open' : 'Closed'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      {restaurant && (
+                        <Link
+                          to={`/restaurants/${rid}`}
+                          className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                        >
+                          Full Menu <ChevronRight className="w-3.5 h-3.5" />
+                        </Link>
+                      )}
+                    </div>
+                  )}
 
-          <MenuGrid
-            data={filteredItems}
-            isLoading={isLoading}
-            isError={isError}
-            refetch={refetch}
-          />
+                  {/* Single restaurant — just show a simple header */}
+                  {Object.keys(itemsByRestaurant).length === 1 && (
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-800">
+                          {search ? `Results for "${search}"` : category === 'All' ? 'Our Menu' : category}
+                        </h2>
+                        <p className="text-gray-400 text-xs mt-0.5">
+                          {restaurant?.name} · {items.length} items
+                        </p>
+                      </div>
+                      <span className="text-sm text-gray-400">{items.length} items</span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {items.map((item, idx) => (
+                      <MenuCard key={item.id} item={item} index={idx} />
+                    ))}
+                  </div>
+                </motion.div>
+              )
+            })
+          )}
         </section>
       </div>
     </div>

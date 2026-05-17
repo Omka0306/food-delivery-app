@@ -6,12 +6,14 @@ async function createOrder(req, res, next) {
       ...req.body,
       customerId: req.user.userId,
     });
-    res.status(201).json({
-      success: true,
-      data: order,
-      message: 'Order placed successfully',
-    });
+    res.status(201).json({ success: true, data: order, message: 'Order placed successfully' });
   } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({
+        success: false,
+        error: { code: 'ORDER_VALIDATION_ERROR', message: err.message },
+      });
+    }
     next(err);
   }
 }
