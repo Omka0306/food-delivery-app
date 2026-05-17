@@ -39,8 +39,7 @@ export default function AddressFormModal({ existing, onClose, onSaved }) {
     onError: (err) => toast.error(err.message || 'Could not save address'),
   })
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
+  const handleSubmit = () => {
     if (!name.trim()) { toast.error('Enter your name'); return }
     if (!/^[0-9]{10}$/.test(phone)) { toast.error('Enter a valid 10-digit phone number'); return }
     if (addressLine.trim().length < 10) { toast.error('Enter a complete address'); return }
@@ -62,12 +61,12 @@ export default function AddressFormModal({ existing, onClose, onSaved }) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
           <h2 className="font-bold text-gray-800 text-base">{isEdit ? 'Edit Address' : 'Add New Address'}</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+          <button type="button" onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
             <X className="w-4 h-4 text-gray-500" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-5 py-5 space-y-4">
+        <div className="px-5 py-5 space-y-4">
           {/* Label picker */}
           <div className="space-y-2">
             <Label className="text-gray-700 font-medium text-sm">Save as</Label>
@@ -134,14 +133,15 @@ export default function AddressFormModal({ existing, onClose, onSaved }) {
           </label>
 
           <button
-            type="submit"
+            type="button"
+            onClick={handleSubmit}
             disabled={mutation.isPending}
             className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors text-sm mt-1"
           >
             {mutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
             {mutation.isPending ? 'Saving…' : isEdit ? 'Update Address' : 'Save Address'}
           </button>
-        </form>
+        </div>
       </motion.div>
     </div>
   )
