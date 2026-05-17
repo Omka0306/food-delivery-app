@@ -169,6 +169,7 @@ export default function CheckoutForm({ promoCode = null }) {
               {...register('customerName')}
               placeholder="John Doe"
               readOnly={!!selectedAddr}
+              data-testid="field-name"
               className={`${errors.customerName ? 'border-red-400' : ''} ${selectedAddr ? 'bg-gray-50 cursor-default' : ''}`}
             />
           </FieldWrapper>
@@ -183,6 +184,7 @@ export default function CheckoutForm({ promoCode = null }) {
               placeholder="9876543210"
               type="tel"
               readOnly={!!selectedAddr}
+              data-testid="field-phone"
               className={`${errors.phone ? 'border-red-400' : ''} ${selectedAddr ? 'bg-gray-50 cursor-default' : ''}`}
             />
           </FieldWrapper>
@@ -197,6 +199,7 @@ export default function CheckoutForm({ promoCode = null }) {
               placeholder="House/Flat no., Street, Area, City, Pincode"
               rows={3}
               readOnly={!!selectedAddr}
+              data-testid="field-address"
               className={`flex w-full rounded-md border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed resize-none ${
                 errors.address ? 'border-red-400' : 'border-input'
               } ${selectedAddr ? 'bg-gray-50 cursor-default' : ''}`}
@@ -226,6 +229,7 @@ export default function CheckoutForm({ promoCode = null }) {
           <Button
             type="submit"
             disabled={isPending || items.length === 0}
+            data-testid="submit-btn"
             className="w-full h-12 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-orange-400 hover:from-orange-600 hover:to-orange-500 shadow-lg shadow-orange-200"
           >
             {isPending ? (

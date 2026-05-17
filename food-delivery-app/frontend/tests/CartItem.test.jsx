@@ -56,7 +56,7 @@ describe('CartItem', () => {
   it('renders item name and total price correctly', () => {
     render(<CartItem item={mockItem} />)
     expect(screen.getByText('Pepperoni')).toBeInTheDocument()
-    expect(screen.getByText('$44.97')).toBeInTheDocument()
+    expect(screen.getByText('₹44.97')).toBeInTheDocument()
     expect(screen.getByTestId('cart-qty')).toHaveTextContent('3')
   })
 

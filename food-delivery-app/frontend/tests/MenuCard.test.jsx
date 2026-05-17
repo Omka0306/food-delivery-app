@@ -57,7 +57,7 @@ describe('MenuCard', () => {
   it('renders item name, price, and description', () => {
     render(<MenuCard item={mockItem} index={0} />)
     expect(screen.getByText('Margherita')).toBeInTheDocument()
-    expect(screen.getByText('$12.99')).toBeInTheDocument()
+    expect(screen.getByText('₹12.99')).toBeInTheDocument()
     expect(screen.getByText(/Classic tomato base/)).toBeInTheDocument()
   })
 
