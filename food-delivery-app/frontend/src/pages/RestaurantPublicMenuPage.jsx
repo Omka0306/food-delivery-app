@@ -2,10 +2,11 @@ import { useEffect, useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Star, Clock, MapPin, ChevronLeft } from 'lucide-react'
-import { restaurantApi } from '@/services/api'
+import { ArrowLeft, Star, Clock, MapPin, MessageSquare } from 'lucide-react'
+import { restaurantApi, reviewsApi } from '@/services/api'
 import CategoryFilter from '@/components/menu/CategoryFilter'
 import MenuGrid from '@/components/menu/MenuGrid'
+import ReviewList from '@/components/reviews/ReviewList'
 
 const VEG_FILTERS = [
   { key: 'all',    label: 'All'     },
@@ -17,6 +18,7 @@ export default function RestaurantPublicMenuPage() {
   const { restaurantId } = useParams()
   const [category,   setCategory]   = useState('All')
   const [vegFilter,  setVegFilter]  = useState('all')
+  const [tab, setTab] = useState('menu') // 'menu' | 'reviews'
 
   const { data: restaurant, isLoading: loadingInfo } = useQuery({
     queryKey: ['restaurant', restaurantId],
@@ -34,6 +36,16 @@ export default function RestaurantPublicMenuPage() {
       return res.data.data
     },
     enabled: !!restaurantId,
+  })
+
+  const { data: reviews = [] } = useQuery({
+    queryKey: ['restaurant-reviews', restaurantId],
+    queryFn: async () => {
+      const res = await reviewsApi.getByRestaurant(restaurantId)
+      return res.data.data
+    },
+    enabled: !!restaurantId,
+    staleTime: 2 * 60 * 1000,
   })
 
   useEffect(() => {
@@ -121,55 +133,85 @@ export default function RestaurantPublicMenuPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-5">
-        {/* Category + Veg filters */}
-        <CategoryFilter
-          active={category}
-          categories={availableCategories}
-          onChange={(c) => { setCategory(c); setVegFilter('all') }}
-        />
 
-        <div className="flex items-center gap-2">
-          {VEG_FILTERS.map((f) => {
-            const active = vegFilter === f.key
-            return (
-              <motion.button
-                key={f.key}
-                whileTap={{ scale: 0.94 }}
-                onClick={() => setVegFilter(f.key)}
-                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                  active
-                    ? f.key === 'veg'
-                      ? 'bg-green-600 text-white border-green-600'
-                      : f.key === 'nonveg'
-                      ? 'bg-red-600 text-white border-red-600'
-                      : 'bg-gray-800 text-white border-gray-800'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                }`}
-              >
-                {f.key === 'veg' && (
-                  <span className={`w-3 h-3 rounded-sm border flex items-center justify-center ${active ? 'border-white' : 'border-green-600'}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : 'bg-green-600'}`} />
-                  </span>
-                )}
-                {f.key === 'nonveg' && (
-                  <span className={`w-3 h-3 rounded-sm border flex items-center justify-center ${active ? 'border-white' : 'border-red-600'}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : 'bg-red-600'}`} />
-                  </span>
-                )}
-                {f.label}
-              </motion.button>
-            )
-          })}
-          <span className="ml-auto text-xs text-gray-400">{filteredItems.length} items</span>
+        {/* Menu / Reviews tab bar */}
+        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+          {[
+            { key: 'menu', label: 'Menu', icon: null },
+            { key: 'reviews', label: `Reviews${reviews.length > 0 ? ` (${reviews.length})` : ''}`, icon: MessageSquare },
+          ].map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                tab === key ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {Icon && <Icon className="w-3.5 h-3.5" />}
+              {label}
+            </button>
+          ))}
         </div>
 
-        {/* Menu grid */}
-        <MenuGrid
-          data={filteredItems}
-          isLoading={loadingMenu}
-          isError={isError}
-          refetch={refetch}
-        />
+        {tab === 'menu' ? (
+          <>
+            {/* Category + Veg filters */}
+            <CategoryFilter
+              active={category}
+              categories={availableCategories}
+              onChange={(c) => { setCategory(c); setVegFilter('all') }}
+            />
+
+            <div className="flex items-center gap-2">
+              {VEG_FILTERS.map((f) => {
+                const active = vegFilter === f.key
+                return (
+                  <motion.button
+                    key={f.key}
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => setVegFilter(f.key)}
+                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                      active
+                        ? f.key === 'veg'
+                          ? 'bg-green-600 text-white border-green-600'
+                          : f.key === 'nonveg'
+                          ? 'bg-red-600 text-white border-red-600'
+                          : 'bg-gray-800 text-white border-gray-800'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    {f.key === 'veg' && (
+                      <span className={`w-3 h-3 rounded-sm border flex items-center justify-center ${active ? 'border-white' : 'border-green-600'}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : 'bg-green-600'}`} />
+                      </span>
+                    )}
+                    {f.key === 'nonveg' && (
+                      <span className={`w-3 h-3 rounded-sm border flex items-center justify-center ${active ? 'border-white' : 'border-red-600'}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : 'bg-red-600'}`} />
+                      </span>
+                    )}
+                    {f.label}
+                  </motion.button>
+                )
+              })}
+              <span className="ml-auto text-xs text-gray-400">{filteredItems.length} items</span>
+            </div>
+
+            <MenuGrid
+              data={filteredItems}
+              isLoading={loadingMenu}
+              isError={isError}
+              refetch={refetch}
+            />
+          </>
+        ) : (
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-primary" /> Customer Reviews
+            </h3>
+            <ReviewList reviews={reviews} emptyMessage="No reviews yet. Be the first to review!" />
+          </div>
+        )}
       </div>
     </div>
   )

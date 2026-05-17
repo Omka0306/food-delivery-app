@@ -1,25 +1,100 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ShoppingBag, ArrowRight } from 'lucide-react'
+import { ShoppingBag, ArrowRight, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { ordersApi } from '@/services/api'
+import { ordersApi, reviewsApi } from '@/services/api'
 import { useAuthStore } from '@/store/authStore'
+import ReviewModal from '@/components/reviews/ReviewModal'
 
 const STATUS_BADGE = {
-  'Order Received': 'bg-gray-100 text-gray-700',
-  Preparing: 'bg-yellow-100 text-yellow-700',
-  'Out for Delivery': 'bg-purple-100 text-purple-700',
-  Delivered: 'bg-green-100 text-green-700',
+  'Order Received':    'bg-gray-100 text-gray-700',
+  Preparing:           'bg-yellow-100 text-yellow-700',
+  'Out for Delivery':  'bg-purple-100 text-purple-700',
+  Delivered:           'bg-green-100 text-green-700',
 }
 
 function formatItems(items) {
   return (items || []).map((i) => `${i.quantity}× ${i.name}`).join(', ')
 }
 
+function OrderCard({ order, onRate }) {
+  const isDelivered = order.status === 'Delivered'
+  const isActive    = !isDelivered
+
+  // Check if this order already has reviews
+  const { data: existingReviews = [] } = useQuery({
+    queryKey: ['order-reviews', order.orderId],
+    queryFn: async () => {
+      const res = await reviewsApi.getByOrder(order.orderId)
+      return res.data.data
+    },
+    enabled: isDelivered,
+    staleTime: 60 * 1000,
+  })
+
+  const alreadyReviewed = existingReviews.length > 0
+
+  return (
+    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:border-orange-200 transition-colors">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 mb-1">
+            <span className="font-mono text-xs text-gray-500">
+              #{order.orderId.slice(-6).toUpperCase()}
+            </span>
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[order.status] || 'bg-gray-100 text-gray-600'}`}>
+              {order.status}
+            </span>
+          </div>
+          <p className="text-gray-700 truncate text-sm">{formatItems(order.items)}</p>
+          <div className="flex items-center gap-4 mt-2">
+            <span className="font-bold text-gray-800">₹{order.total}</span>
+            <span className="text-xs text-gray-400">
+              {new Date(order.createdAt).toLocaleDateString([], {
+                day: 'numeric', month: 'short', year: 'numeric',
+              })}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2 flex-shrink-0">
+          {isActive && (
+            <Button asChild size="sm" className="bg-primary hover:bg-orange-600 rounded-xl">
+              <Link to={`/order/${order.orderId}`}>
+                Track <ArrowRight className="w-3 h-3 ml-1" />
+              </Link>
+            </Button>
+          )}
+          <Button asChild size="sm" variant="outline" className="rounded-xl">
+            <Link to={`/order/${order.orderId}`}>View</Link>
+          </Button>
+          {isDelivered && (
+            alreadyReviewed ? (
+              <span className="flex items-center gap-1 text-xs text-green-600 font-semibold px-2 py-1.5 bg-green-50 rounded-xl justify-center">
+                <Star className="w-3 h-3 fill-green-500 text-green-500" /> Reviewed
+              </span>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => onRate(order)}
+                className="bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200 rounded-xl text-xs font-semibold"
+                variant="ghost"
+              >
+                <Star className="w-3 h-3 mr-1" /> Rate Items
+              </Button>
+            )
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function MyOrdersPage() {
   const { isAuthenticated } = useAuthStore()
   const navigate = useNavigate()
+  const [reviewOrder, setReviewOrder] = useState(null)
 
   useEffect(() => { document.title = 'My Orders — QuickBite' }, [])
 
@@ -69,52 +144,16 @@ export default function MyOrdersPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {sorted.map((order) => {
-              const isActive = !['Delivered'].includes(order.status)
-              return (
-                <div
-                  key={order.orderId}
-                  className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:border-orange-200 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="font-mono text-xs text-gray-500">
-                          #{order.orderId.slice(-6).toUpperCase()}
-                        </span>
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[order.status] || 'bg-gray-100 text-gray-600'}`}>
-                          {order.status}
-                        </span>
-                      </div>
-                      <p className="text-gray-700 truncate text-sm">{formatItems(order.items)}</p>
-                      <div className="flex items-center gap-4 mt-2">
-                        <span className="font-bold text-gray-800">₹{order.total}</span>
-                        <span className="text-xs text-gray-400">
-                          {new Date(order.createdAt).toLocaleDateString([], {
-                            day: 'numeric', month: 'short', year: 'numeric',
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-2 flex-shrink-0">
-                      {isActive && (
-                        <Button asChild size="sm" className="bg-primary hover:bg-orange-600 rounded-xl">
-                          <Link to={`/order/${order.orderId}`}>
-                            Track <ArrowRight className="w-3 h-3 ml-1" />
-                          </Link>
-                        </Button>
-                      )}
-                      <Button asChild size="sm" variant="outline" className="rounded-xl">
-                        <Link to={`/order/${order.orderId}`}>View</Link>
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+            {sorted.map((order) => (
+              <OrderCard key={order.orderId} order={order} onRate={setReviewOrder} />
+            ))}
           </div>
         )}
       </div>
+
+      {reviewOrder && (
+        <ReviewModal order={reviewOrder} onClose={() => setReviewOrder(null)} />
+      )}
     </div>
   )
 }

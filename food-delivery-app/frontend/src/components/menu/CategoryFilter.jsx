@@ -8,7 +8,7 @@ export default function CategoryFilter({ active, onChange, categories = [] }) {
   const scrollRef = useRef(null)
 
   const tabs = [
-    { label: 'All', emoji: '🍽️', bg: 'bg-orange-100' },
+    { label: 'All', emoji: '🍽️', bg: 'bg-gray-100' },
     ...categories
       .filter((c) => c && c !== 'All')
       .map((c) => ({ label: c, emoji: getCategoryEmoji(c), bg: getCategoryBg(c) })),
@@ -32,7 +32,7 @@ export default function CategoryFilter({ active, onChange, categories = [] }) {
               className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl transition-all duration-200 ${
                 isActive
                   ? 'bg-primary shadow-lg shadow-orange-200 ring-2 ring-primary ring-offset-2 scale-110'
-                  : `${cat.bg} hover:scale-105`
+                  : `${cat.bg} ring-1 ring-gray-200 hover:scale-105`
               }`}
             >
               {cat.emoji}

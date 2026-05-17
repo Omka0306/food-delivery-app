@@ -162,6 +162,14 @@ export const adminApi = {
   suspendRestaurant: (id)     => apiClient.patch(`/admin/restaurants/${id}/suspend`),
 }
 
+// ── Reviews ─────────────────────────────────────────────────────────────────
+export const reviewsApi = {
+  create:           (data)           => apiClient.post('/reviews', data),
+  getByMenuItem:    (itemId)         => apiClient.get(`/reviews/menu/${itemId}`),
+  getByRestaurant:  (restaurantId)   => apiClient.get(`/reviews/restaurant/${restaurantId}`),
+  getByOrder:       (orderId)        => apiClient.get(`/reviews/order/${orderId}`),
+}
+
 // ── Health ──────────────────────────────────────────────────────────────────
 export const healthApi = {
   check: () => apiClient.get('/health'),
