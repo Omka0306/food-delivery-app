@@ -23,15 +23,23 @@ export default function HomePage() {
   const searchRef                 = useRef(null)
   const menuSectionRef            = useRef(null)
 
-  const { data: allItems = [], isLoading, isError, refetch } = useMenu(category)
+  // Fetch all items once (category='All') and filter client-side
+  // so the category tabs reflect what's actually in the menu
+  const { data: allItems = [], isLoading, isError, refetch } = useMenu('All')
+
+  const availableCategories = useMemo(
+    () => [...new Set(allItems.map((i) => i.category).filter(Boolean))].sort(),
+    [allItems]
+  )
 
   useEffect(() => {
     document.title = 'QuickBite — Order Food Online'
   }, [])
 
-  // Client-side search + veg filter applied on top of category results
+  // Client-side filtering — category + search + veg all applied locally
   const filteredItems = useMemo(() => {
     let items = allItems
+    if (category !== 'All') items = items.filter((i) => i.category === category)
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       items = items.filter(
@@ -44,7 +52,7 @@ export default function HomePage() {
     if (vegFilter === 'veg')    items = items.filter((i) => i.isVeg === true)
     if (vegFilter === 'nonveg') items = items.filter((i) => i.isVeg === false)
     return items
-  }, [allItems, search, vegFilter])
+  }, [allItems, category, search, vegFilter])
 
   // Budget section — only shown when no active search/veg filter and on "All" category
   const budgetItems = useMemo(
@@ -102,9 +110,13 @@ export default function HomePage() {
         {/* ── Animated promo banner ───────────────────── */}
         <PromoBanner onCtaClick={scrollToMenu} />
 
-        {/* ── Category filter (circular) ──────────────── */}
+        {/* ── Category filter (circular, dynamic) ────── */}
         <div>
-          <CategoryFilter active={category} onChange={(c) => { setCategory(c); setSearch(''); setVegFilter('all') }} />
+          <CategoryFilter
+            active={category}
+            categories={availableCategories}
+            onChange={(c) => { setCategory(c); setSearch(''); setVegFilter('all') }}
+          />
         </div>
 
         {/* ── Veg / Non-veg toggle ────────────────────── */}

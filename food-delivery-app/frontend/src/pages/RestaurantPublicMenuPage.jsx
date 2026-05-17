@@ -40,6 +40,11 @@ export default function RestaurantPublicMenuPage() {
     if (restaurant?.name) document.title = `${restaurant.name} — QuickBite`
   }, [restaurant?.name])
 
+  const availableCategories = useMemo(
+    () => [...new Set(allItems.map((i) => i.category).filter(Boolean))].sort(),
+    [allItems]
+  )
+
   const filteredItems = useMemo(() => {
     let items = allItems
     if (category !== 'All') items = items.filter((i) => i.category === category)
@@ -117,7 +122,11 @@ export default function RestaurantPublicMenuPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-5">
         {/* Category + Veg filters */}
-        <CategoryFilter active={category} onChange={(c) => { setCategory(c); setVegFilter('all') }} />
+        <CategoryFilter
+          active={category}
+          categories={availableCategories}
+          onChange={(c) => { setCategory(c); setVegFilter('all') }}
+        />
 
         <div className="flex items-center gap-2">
           {VEG_FILTERS.map((f) => {

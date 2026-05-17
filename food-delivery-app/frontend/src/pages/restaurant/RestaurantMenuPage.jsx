@@ -7,34 +7,44 @@ import {
 import toast from 'react-hot-toast'
 import { restaurantApi } from '@/services/api'
 import { useAuthStore } from '@/store/authStore'
+import { PRESET_CATEGORIES, getCategoryEmoji, getCategoryBg } from '@/config/categories'
 
-const CATEGORIES = ['Pizza', 'Burgers', 'Sides', 'Drinks']
-
-const CATEGORY_COLORS = {
-  Burgers: 'bg-orange-50', Pizza: 'bg-red-50', Sides: 'bg-green-50',
-  Drinks: 'bg-blue-50', default: 'bg-gray-50',
-}
-const CATEGORY_EMOJI = {
-  Burgers: '🍔', Pizza: '🍕', Sides: '🍟', Drinks: '🥤', default: '🍽️',
-}
+const CUSTOM_VALUE = '__custom__'
 
 const EMPTY_FORM = {
-  name: '', description: '', price: '', category: 'Burgers',
+  name: '', description: '', price: '', category: 'Biryani',
   imageUrl: '', isVeg: true, prepTime: '15-20 mins',
 }
 
 function ItemFormModal({ initial, onClose, onSave, isSaving }) {
-  const [form, setForm] = useState(initial || EMPTY_FORM)
+  const isPreset    = (cat) => PRESET_CATEGORIES.some((c) => c.label === cat)
+  const initialCat  = initial?.category || EMPTY_FORM.category
+  const [form, setForm]         = useState(initial || EMPTY_FORM)
+  const [customCat, setCustomCat] = useState(isPreset(initialCat) ? '' : initialCat)
+  const [useCustom, setUseCustom] = useState(!isPreset(initialCat))
+
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
+
+  const handleCategoryChange = (e) => {
+    if (e.target.value === CUSTOM_VALUE) {
+      setUseCustom(true)
+      setForm((f) => ({ ...f, category: customCat }))
+    } else {
+      setUseCustom(false)
+      setForm((f) => ({ ...f, category: e.target.value }))
+    }
+  }
+
   const isEdit = !!initial?.id
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!form.name.trim() || !form.price || !form.category) {
+    const finalCategory = useCustom ? customCat.trim() : form.category
+    if (!form.name.trim() || !form.price || !finalCategory) {
       toast.error('Name, price, and category are required')
       return
     }
-    onSave({ ...form, price: parseFloat(form.price) })
+    onSave({ ...form, category: finalCategory, price: parseFloat(form.price) })
   }
 
   return (
@@ -81,14 +91,39 @@ function ItemFormModal({ initial, onClose, onSave, isSaving }) {
             <div>
               <label className="text-xs font-semibold text-gray-600 mb-1 block">Category *</label>
               <select
-                value={form.category}
-                onChange={set('category')}
+                value={useCustom ? CUSTOM_VALUE : form.category}
+                onChange={handleCategoryChange}
                 className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
               >
-                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                {PRESET_CATEGORIES.map((c) => (
+                  <option key={c.label} value={c.label}>{c.emoji} {c.label}</option>
+                ))}
+                <option value={CUSTOM_VALUE}>✏️ Custom…</option>
               </select>
             </div>
           </div>
+
+          {/* Custom category input */}
+          {useCustom && (
+            <div>
+              <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                Custom Category Name *
+              </label>
+              <input
+                value={customCat}
+                onChange={(e) => {
+                  setCustomCat(e.target.value)
+                  setForm((f) => ({ ...f, category: e.target.value }))
+                }}
+                placeholder="e.g. Dal Chawal, Chaat, Momos…"
+                className="w-full px-3 py-2 rounded-lg border border-primary/40 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                autoFocus
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                This will appear as its own category section on your menu.
+              </p>
+            </div>
+          )}
 
           {/* Prep Time + Veg row */}
           <div className="grid grid-cols-2 gap-3">
@@ -322,8 +357,8 @@ export default function RestaurantMenuPage() {
         ) : (
           categories.map((cat) => {
             const catItems = items.filter((i) => (i.category || 'Other') === cat)
-            const bg    = CATEGORY_COLORS[cat] || CATEGORY_COLORS.default
-            const emoji = CATEGORY_EMOJI[cat]  || CATEGORY_EMOJI.default
+            const bg    = getCategoryBg(cat)
+            const emoji = getCategoryEmoji(cat)
 
             return (
               <div key={cat}>

@@ -1,23 +1,25 @@
 import { useRef } from 'react'
 import { motion } from 'framer-motion'
+import { getCategoryEmoji, getCategoryBg } from '@/config/categories'
 
-const CATEGORIES = [
-  { label: 'All',     emoji: '🍽️', bg: 'bg-orange-100' },
-  { label: 'Pizza',   emoji: '🍕', bg: 'bg-red-100'    },
-  { label: 'Burgers', emoji: '🍔', bg: 'bg-yellow-100' },
-  { label: 'Sides',   emoji: '🍟', bg: 'bg-green-100'  },
-  { label: 'Drinks',  emoji: '🥤', bg: 'bg-blue-100'   },
-]
-
-export default function CategoryFilter({ active, onChange }) {
+// `categories` prop: array of category label strings present in the current menu.
+// Always prepends an "All" option automatically.
+export default function CategoryFilter({ active, onChange, categories = [] }) {
   const scrollRef = useRef(null)
+
+  const tabs = [
+    { label: 'All', emoji: '🍽️', bg: 'bg-orange-100' },
+    ...categories
+      .filter((c) => c && c !== 'All')
+      .map((c) => ({ label: c, emoji: getCategoryEmoji(c), bg: getCategoryBg(c) })),
+  ]
 
   return (
     <div
       ref={scrollRef}
       className="flex gap-5 overflow-x-auto pb-2 scrollbar-hide px-1"
     >
-      {CATEGORIES.map((cat) => {
+      {tabs.map((cat) => {
         const isActive = active === cat.label
         return (
           <motion.button
@@ -36,7 +38,7 @@ export default function CategoryFilter({ active, onChange }) {
               {cat.emoji}
             </div>
             <span
-              className={`text-xs font-semibold transition-colors duration-200 ${
+              className={`text-xs font-semibold transition-colors duration-200 max-w-[4rem] text-center leading-tight ${
                 isActive ? 'text-primary' : 'text-gray-500'
               }`}
             >

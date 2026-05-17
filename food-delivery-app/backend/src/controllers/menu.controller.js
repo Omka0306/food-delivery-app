@@ -56,14 +56,6 @@ async function createMenuItemForRestaurant(req, res, next) {
       });
     }
 
-    const VALID_CATEGORIES = ['Pizza', 'Burgers', 'Sides', 'Drinks'];
-    if (!VALID_CATEGORIES.includes(category)) {
-      return res.status(400).json({
-        success: false,
-        error: { code: 'VALIDATION_ERROR', message: `category must be one of: ${VALID_CATEGORIES.join(', ')}` },
-      });
-    }
-
     const item = await menuService.createMenuItem({
       restaurantId,
       name,

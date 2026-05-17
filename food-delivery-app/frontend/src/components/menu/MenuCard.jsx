@@ -5,20 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
 import useCart from '@/hooks/useCart'
-
-const fallbackColors = {
-  Pizza:   'from-orange-400 to-red-400',
-  Burgers: 'from-yellow-400 to-orange-400',
-  Sides:   'from-green-400 to-teal-400',
-  Drinks:  'from-blue-400 to-cyan-400',
-}
-
-const fallbackEmojis = {
-  Pizza:   '🍕',
-  Burgers: '🍔',
-  Sides:   '🍟',
-  Drinks:  '🥤',
-}
+import { getCategoryEmoji } from '@/config/categories'
 
 export default function MenuCard({ item, index }) {
   const {
@@ -31,11 +18,12 @@ export default function MenuCard({ item, index }) {
   const inCart = isInCart(item.id)
   const qty    = getQuantity(item.id)
 
+  const emoji = getCategoryEmoji(item.category)
+
   const handleAdd = () => {
     const added = addItem(item)
 
     if (added === false) {
-      // Different restaurant — ask user to confirm
       toast(
         (t) => (
           <div className="flex flex-col gap-2 text-sm">
@@ -48,7 +36,7 @@ export default function MenuCard({ item, index }) {
                 onClick={() => {
                   clearCartAndAdd(item)
                   toast.dismiss(t.id)
-                  toast.success(`${fallbackEmojis[item.category] || '🍽️'} ${item.name} added!`)
+                  toast.success(`${emoji} ${item.name} added!`)
                 }}
                 className="flex-1 bg-primary text-white text-xs font-bold py-1.5 rounded-lg hover:bg-orange-600 transition-colors"
               >
@@ -68,9 +56,7 @@ export default function MenuCard({ item, index }) {
       return
     }
 
-    toast.success(`${fallbackEmojis[item.category] || '🍽️'} ${item.name} added to cart!`, {
-      duration: 2000,
-    })
+    toast.success(`${emoji} ${item.name} added to cart!`, { duration: 2000 })
   }
 
   const isUnavailable = item.available === false
@@ -94,12 +80,8 @@ export default function MenuCard({ item, index }) {
             loading="lazy"
           />
         ) : (
-          <div
-            className={`w-full h-48 bg-gradient-to-br ${
-              fallbackColors[item.category] || 'from-gray-400 to-gray-500'
-            } flex items-center justify-center`}
-          >
-            <span className="text-7xl">{fallbackEmojis[item.category] || '🍽️'}</span>
+          <div className="w-full h-48 bg-gradient-to-br from-orange-100 to-amber-50 flex items-center justify-center">
+            <span className="text-7xl">{emoji}</span>
           </div>
         )}
 
