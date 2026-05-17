@@ -54,7 +54,7 @@ export default function StatusTimeline({ statusHistory, currentStatus }) {
                     : 'border-gray-200 bg-white'
                 }`}
               >
-                {isCompleted && !isCurrent ? (
+                {isCompleted && (!isCurrent || currentStatus === 'Delivered') ? (
                   <CheckCircle className="w-5 h-5 text-white" />
                 ) : isCurrent ? (
                   <motion.div

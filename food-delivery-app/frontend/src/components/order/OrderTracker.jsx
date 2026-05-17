@@ -85,8 +85,9 @@ export default function OrderTracker({ order, lastUpdated }) {
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
-            className="px-6 pb-4 border-t border-gray-100"
+            className="px-6 pb-6 border-t border-gray-100"
           >
+            {/* Items */}
             <div className="pt-4 space-y-2">
               {order.items.map((item, i) => (
                 <div key={i} className="flex justify-between text-sm text-gray-600">
@@ -94,10 +95,43 @@ export default function OrderTracker({ order, lastUpdated }) {
                   <span className="font-semibold">₹{(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
-              <div className="border-t pt-2 flex justify-between font-bold text-gray-800">
-                <span>Total</span>
-                <span>₹{order.total.toFixed(2)}</span>
+            </div>
+
+            {/* Bill breakdown */}
+            <div className="border-t border-dashed mt-3 pt-3 space-y-1.5 text-sm text-gray-500">
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+                <span>₹{(order.pricing?.subtotal ?? order.total).toFixed(2)}</span>
               </div>
+              {order.pricing ? (
+                <>
+                  <div className="flex justify-between">
+                    <span>GST (5%)</span>
+                    <span>₹{order.pricing.gst.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Platform fee</span>
+                    <span>₹{order.pricing.platformFee.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Delivery fee</span>
+                    {order.pricing.deliveryFee === 0
+                      ? <span className="text-green-600 font-semibold">FREE</span>
+                      : <span>₹{order.pricing.deliveryFee.toFixed(2)}</span>}
+                  </div>
+                  {order.pricing.discount > 0 && (
+                    <div className="flex justify-between text-green-600 font-semibold">
+                      <span>Discount{order.promoCode ? ` (${order.promoCode})` : ''}</span>
+                      <span>−₹{order.pricing.discount.toFixed(2)}</span>
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </div>
+
+            <div className="border-t mt-3 pt-3 flex justify-between font-bold text-gray-800">
+              <span>Total</span>
+              <span>₹{order.total.toFixed(2)}</span>
             </div>
           </motion.div>
         )}
