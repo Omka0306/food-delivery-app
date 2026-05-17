@@ -162,6 +162,14 @@ export const adminApi = {
   suspendRestaurant: (id)     => apiClient.patch(`/admin/restaurants/${id}/suspend`),
 }
 
+// ── Saved Addresses ─────────────────────────────────────────────────────────
+export const addressesApi = {
+  list:   ()                          => apiClient.get('/addresses'),
+  add:    (data)                      => apiClient.post('/addresses', data),
+  update: (addressId, data)           => apiClient.patch(`/addresses/${addressId}`, data),
+  remove: (addressId)                 => apiClient.delete(`/addresses/${addressId}`),
+}
+
 // ── Reviews ─────────────────────────────────────────────────────────────────
 export const reviewsApi = {
   create:           (data)           => apiClient.post('/reviews', data),
