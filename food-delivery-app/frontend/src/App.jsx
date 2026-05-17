@@ -6,6 +6,7 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import CartDrawer from '@/components/cart/CartDrawer'
 import AIMealAssistantButton from '@/components/ai/AIMealAssistantButton'
+import LiveOrderBar from '@/components/order/LiveOrderBar'
 import ProtectedRoute from '@/components/routing/ProtectedRoute'
 import RoleRedirect from '@/components/routing/RoleRedirect'
 
@@ -101,6 +102,7 @@ export default function App() {
       <Navbar />
       <CartDrawer />
       <AIMealAssistantButton />
+      <LiveOrderBar />
 
       <main className="flex-1">
         <AnimatePresence mode="wait">

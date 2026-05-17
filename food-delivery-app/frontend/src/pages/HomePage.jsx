@@ -282,7 +282,10 @@ export default function HomePage() {
               <p className="text-gray-500 font-medium text-lg">No items found</p>
             </div>
           ) : (
-            Object.entries(itemsByRestaurant).map(([rid, items], groupIdx) => {
+            Object.entries(itemsByRestaurant)
+              // Skip groups where restaurant data is unknown (restaurant not in active list)
+              .filter(([rid]) => rid === '__unknown__' ? false : (restaurants.length === 0 || restaurantMap[rid]))
+              .map(([rid, items], groupIdx) => {
               const restaurant = restaurantMap[rid]
               return (
                 <motion.div
@@ -291,19 +294,19 @@ export default function HomePage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: groupIdx * 0.08 }}
                 >
-                  {/* Restaurant header — only shown when multiple restaurants exist */}
-                  {Object.keys(itemsByRestaurant).length > 1 && (
+                  {/* Restaurant header — only shown when multiple restaurants exist AND restaurant data is known */}
+                  {Object.keys(itemsByRestaurant).length > 1 && restaurant && (
                     <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-xl">
-                          {restaurant ? '🍽️' : '❓'}
+                          🍽️
                         </div>
                         <div>
                           <h2 className="text-base font-bold text-gray-800">
-                            {restaurant?.name || 'Unknown Restaurant'}
+                            {restaurant.name}
                           </h2>
                           <div className="flex items-center gap-2 text-xs text-gray-400">
-                            {restaurant?.rating && (
+                            {restaurant.rating > 0 && (
                               <span className="flex items-center gap-0.5">
                                 <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
                                 {restaurant.rating}
@@ -312,20 +315,18 @@ export default function HomePage() {
                             <span className="flex items-center gap-0.5">
                               <Clock className="w-3 h-3" /> 25–35 min
                             </span>
-                            <span className={`font-semibold ${restaurant?.isOpen ? 'text-green-600' : 'text-red-400'}`}>
-                              {restaurant?.isOpen ? 'Open' : 'Closed'}
+                            <span className={`font-semibold ${restaurant.isOpen ? 'text-green-600' : 'text-red-400'}`}>
+                              {restaurant.isOpen ? 'Open' : 'Closed'}
                             </span>
                           </div>
                         </div>
                       </div>
-                      {restaurant && (
-                        <Link
-                          to={`/restaurants/${rid}`}
-                          className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                        >
-                          Full Menu <ChevronRight className="w-3.5 h-3.5" />
-                        </Link>
-                      )}
+                      <Link
+                        to={`/restaurants/${rid}`}
+                        className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                      >
+                        Full Menu <ChevronRight className="w-3.5 h-3.5" />
+                      </Link>
                     </div>
                   )}
 

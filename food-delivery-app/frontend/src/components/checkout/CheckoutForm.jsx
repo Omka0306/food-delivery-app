@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import { ordersApi } from '@/services/api'
 import { useAuthStore } from '@/store/authStore'
 import useCart from '@/hooks/useCart'
+import useActiveOrderStore from '@/store/activeOrderStore'
 import AddressSelector from './AddressSelector'
 
 const schema = z.object({
@@ -44,6 +45,7 @@ export default function CheckoutForm({ promoCode = null }) {
   const navigate  = useNavigate()
   const { items, totalPrice, clearCart } = useCart()
   const { user, isAuthenticated } = useAuthStore()
+  const setActiveOrder = useActiveOrderStore((s) => s.setActiveOrder)
 
   const [selectedAddr,  setSelectedAddr]  = useState(null)
   const [showManual,    setShowManual]    = useState(false)
@@ -99,9 +101,11 @@ export default function CheckoutForm({ promoCode = null }) {
       return ordersApi.place(payload)
     },
     onSuccess: (res) => {
+      const placedOrderId = res.data.data.orderId
       clearCart()
+      setActiveOrder(placedOrderId)
       toast.success('🎉 Order placed successfully!')
-      navigate(`/order/${res.data.data.orderId}`)
+      navigate(`/order/${placedOrderId}`)
     },
     onError: () => toast.error('Something went wrong. Please try again.'),
   })
