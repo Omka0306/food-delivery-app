@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -9,6 +9,7 @@ import useCart from '@/hooks/useCart'
 export default function CheckoutPage() {
   const { items } = useCart()
   const navigate = useNavigate()
+  const [promo, setPromo] = useState(null) // { code, discount, freeDelivery }
 
   useEffect(() => {
     document.title = 'Checkout — QuickBite'
@@ -33,10 +34,10 @@ export default function CheckoutPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             <div className="lg:col-span-3">
-              <CheckoutForm />
+              <CheckoutForm promoCode={promo?.code || null} />
             </div>
             <div className="lg:col-span-2">
-              <OrderSummary />
+              <OrderSummary onPromoChange={setPromo} />
             </div>
           </div>
         </motion.div>

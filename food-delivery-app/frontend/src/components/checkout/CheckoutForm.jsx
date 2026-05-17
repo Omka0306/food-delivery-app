@@ -40,7 +40,7 @@ function FieldWrapper({ label, error, success, children }) {
   )
 }
 
-export default function CheckoutForm() {
+export default function CheckoutForm({ promoCode = null }) {
   const navigate  = useNavigate()
   const { items, totalPrice, clearCart } = useCart()
   const { user, isAuthenticated } = useAuthStore()
@@ -94,6 +94,7 @@ export default function CheckoutForm() {
           name:       i.name,
           price:      i.price,
         })),
+        ...(promoCode && { promoCode }),
       }
       return ordersApi.place(payload)
     },
@@ -106,7 +107,7 @@ export default function CheckoutForm() {
   })
 
   const deliveryFee  = totalPrice >= 499 ? 0 : 40
-  const orderTotal   = totalPrice + deliveryFee
+  const orderTotal   = parseFloat((totalPrice + totalPrice * 0.05 + 10 + deliveryFee).toFixed(2))
 
   return (
     <form onSubmit={handleSubmit(mutate)} className="space-y-5">

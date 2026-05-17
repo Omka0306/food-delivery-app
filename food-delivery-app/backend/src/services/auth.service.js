@@ -9,7 +9,7 @@ const {
   AdminDeleteUserCommand,
   AdminGetUserCommand,
 } = require('@aws-sdk/client-cognito-identity-provider');
-const { PutCommand, GetCommand } = require('@aws-sdk/lib-dynamodb');
+const { PutCommand, GetCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
 const { cognitoClient } = require('../config/cognito');
 const { docClient } = require('../config/dynamodb');
 const { v4: uuidv4 } = require('uuid');
@@ -255,6 +255,27 @@ async function getMe(userId) {
   return result.Item || null;
 }
 
+async function updateProfile(userId, email, { name, phone }) {
+  const now = new Date().toISOString();
+  await docClient.send(
+    new UpdateCommand({
+      TableName: USER_PROFILES_TABLE,
+      Key: { userId },
+      UpdateExpression: 'SET #n = :name, phone = :phone, updatedAt = :now',
+      ExpressionAttributeNames: { '#n': 'name' },
+      ExpressionAttributeValues: { ':name': name, ':phone': phone, ':now': now },
+    })
+  );
+  await cognitoClient.send(
+    new AdminUpdateUserAttributesCommand({
+      UserPoolId: USER_POOL_ID,
+      Username: email,
+      UserAttributes: [{ Name: 'name', Value: name }],
+    })
+  );
+  return { name, phone };
+}
+
 module.exports = {
   register,
   registerRestaurant,
@@ -264,4 +285,5 @@ module.exports = {
   logout,
   resendVerification,
   getMe,
+  updateProfile,
 };

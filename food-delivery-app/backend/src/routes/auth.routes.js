@@ -8,6 +8,7 @@ const {
   logout,
   resendVerification,
   getMe,
+  updateProfile,
 } = require('../controllers/auth.controller');
 const { verifyToken } = require('../middleware/auth');
 const validate = require('../middleware/validate');
@@ -29,6 +30,7 @@ router.post('/login', validate(loginSchema), login);
 router.post('/refresh', validate(refreshSchema), refresh);
 router.post('/logout', verifyToken, logout);
 router.get('/me', verifyToken, getMe);
+router.patch('/profile', verifyToken, updateProfile);
 router.post('/resend-verification', validate(resendVerificationSchema), resendVerification);
 
 module.exports = router;

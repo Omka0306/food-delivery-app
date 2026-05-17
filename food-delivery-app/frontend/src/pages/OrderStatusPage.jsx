@@ -1,16 +1,26 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, RefreshCw, Radio } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import OrderTracker from '@/components/order/OrderTracker'
+import ReviewModal from '@/components/reviews/ReviewModal'
 import useOrderTracking from '@/hooks/useOrderTracking'
 import { unlockAudio } from '@/utils/sounds'
+
+const EMOJI_RATINGS = [
+  { emoji: '😍', rating: 5 },
+  { emoji: '😊', rating: 4 },
+  { emoji: '😐', rating: 3 },
+  { emoji: '😕', rating: 2 },
+]
 
 export default function OrderStatusPage() {
   const { orderId } = useParams()
   const { data: order, isLoading, isError, refetch, dataUpdatedAt, wsConnected } = useOrderTracking(orderId)
   const [secondsAgo, setSecondsAgo] = useState(0)
+  const [showReview, setShowReview] = useState(false)
+  const [reviewDone, setReviewDone] = useState(false)
 
   useEffect(() => {
     document.title = 'Track Order — QuickBite'
@@ -88,7 +98,7 @@ export default function OrderStatusPage() {
 
           <OrderTracker order={order} lastUpdated={lastUpdatedText} />
 
-          {order.status === 'Delivered' && (
+          {order.status === 'Delivered' && !reviewDone && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -96,13 +106,13 @@ export default function OrderStatusPage() {
             >
               <p className="text-2xl mb-2">⭐⭐⭐⭐⭐</p>
               <h3 className="font-bold text-gray-800 mb-1">How was your meal?</h3>
-              <p className="text-gray-400 text-sm mb-4">Your feedback helps us improve</p>
+              <p className="text-gray-400 text-sm mb-4">Tap an emoji to leave a quick review</p>
               <div className="flex gap-3 justify-center">
-                {['😍', '😊', '😐', '😕'].map((emoji) => (
+                {EMOJI_RATINGS.map(({ emoji }) => (
                   <button
                     key={emoji}
                     className="text-3xl hover:scale-125 transition-transform"
-                    onClick={() => {}}
+                    onClick={() => setShowReview(true)}
                   >
                     {emoji}
                   </button>
@@ -110,6 +120,15 @@ export default function OrderStatusPage() {
               </div>
             </motion.div>
           )}
+
+          <AnimatePresence>
+            {showReview && (
+              <ReviewModal
+                order={order}
+                onClose={() => { setShowReview(false); setReviewDone(true) }}
+              />
+            )}
+          </AnimatePresence>
 
           <div className="mt-6 text-center">
             <Button asChild variant="outline" className="rounded-full">

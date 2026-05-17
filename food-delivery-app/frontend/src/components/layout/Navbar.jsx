@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { LogOut, LayoutDashboard, ShoppingBag, ChevronDown } from 'lucide-react'
+import { LogOut, LayoutDashboard, ShoppingBag, ChevronDown, UserCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import CartButton from '@/components/cart/CartButton'
 import { useAuthStore } from '@/store/authStore'
@@ -36,6 +36,14 @@ function UserMenu({ user, onLogout }) {
             <p className="text-sm font-semibold text-gray-800 truncate">{user?.name}</p>
             <p className="text-xs text-gray-400 truncate">{user?.email}</p>
           </div>
+
+          <Link
+            to="/profile"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+          >
+            <UserCircle className="w-4 h-4" /> My Profile
+          </Link>
 
           {user?.role === 'customer' && (
             <Link

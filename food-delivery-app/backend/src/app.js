@@ -11,6 +11,8 @@ const restaurantRoutes = require('./routes/restaurant.routes');
 const adminRoutes = require('./routes/admin.routes');
 const reviewsRoutes = require('./routes/reviews.routes');
 const addressRoutes = require('./routes/address.routes');
+const aiRoutes      = require('./routes/ai.routes');
+const offersRoutes  = require('./routes/offers.routes');
 const errorHandler = require('./middleware/errorHandler');
 const notFound = require('./middleware/notFound');
 
@@ -40,6 +42,8 @@ app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/addresses', addressRoutes);
+app.use('/api/ai',        aiRoutes);
+app.use('/api/offers',    offersRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
