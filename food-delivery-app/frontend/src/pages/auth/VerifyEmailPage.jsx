@@ -4,13 +4,16 @@ import { Mail, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
 import authApi from '@/services/authApi'
+import { useAuthStore } from '@/store/authStore'
 
 const RESEND_COOLDOWN = 60
 
 export default function VerifyEmailPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const email = location.state?.email || ''
+  const email    = location.state?.email    || ''
+  const password = location.state?.password || ''
+  const login    = useAuthStore((s) => s.login)
 
   const [digits, setDigits] = useState(['', '', '', '', '', ''])
   const [isVerifying, setIsVerifying] = useState(false)
@@ -58,8 +61,16 @@ export default function VerifyEmailPage() {
     setError('')
     try {
       await authApi.verify(email, code)
+      if (password) {
+        try {
+          await login({ email, password })
+          toast.success('Email verified! Welcome to QuickBite 🎉')
+          navigate('/', { replace: true })
+          return
+        } catch (_) { /* auto-login failed — fall through to manual login */ }
+      }
       toast.success('Email verified! You can now sign in.')
-      navigate('/login', { state: { email } })
+      navigate('/login', { state: { email }, replace: true })
     } catch (err) {
       setError(err.message || 'Invalid code. Please try again.')
       setDigits(['', '', '', '', '', ''])

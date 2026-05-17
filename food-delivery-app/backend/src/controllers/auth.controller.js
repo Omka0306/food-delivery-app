@@ -79,6 +79,22 @@ async function getMe(req, res, next) {
   }
 }
 
+async function updateProfile(req, res, next) {
+  try {
+    const { name, phone } = req.body;
+    if (!name || !phone) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'name and phone are required' },
+      });
+    }
+    const updated = await authService.updateProfile(req.user.userId, req.user.email, { name, phone });
+    res.json({ success: true, data: updated });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   register,
   registerRestaurant,
@@ -88,4 +104,5 @@ module.exports = {
   logout,
   resendVerification,
   getMe,
+  updateProfile,
 };

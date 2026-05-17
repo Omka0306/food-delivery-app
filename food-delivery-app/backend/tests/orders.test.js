@@ -44,7 +44,7 @@ const validOrderPayload = {
   customerName: 'John Doe',
   phone: '9876543210',
   address: '123 Main Street, Mumbai, Maharashtra 400001',
-  restaurantId: 'rest-001',
+  restaurantId: 'ddb6d8ad-c007-4fff-8d62-3f13064d4725',
   items: [{ menuItemId: 'item-001', quantity: 2, name: 'Margherita', price: 12.99 }],
 };
 

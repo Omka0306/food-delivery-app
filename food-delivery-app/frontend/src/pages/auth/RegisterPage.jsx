@@ -49,7 +49,7 @@ export default function RegisterPage() {
         phone: form.phone,
       })
       toast.success('Account created! Check your email.')
-      navigate('/verify-email', { state: { email: form.email } })
+      navigate('/verify-email', { state: { email: form.email, password: form.password } })
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.')
     } finally {

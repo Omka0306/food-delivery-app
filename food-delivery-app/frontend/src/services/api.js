@@ -178,6 +178,28 @@ export const reviewsApi = {
   getByOrder:       (orderId)        => apiClient.get(`/reviews/order/${orderId}`),
 }
 
+// ── AI Meal Assistant ────────────────────────────────────────────────────────
+export const aiApi = {
+  recommend:      (query, city, filters) => apiClient.post('/ai/recommend', { query, city, filters }),
+  quickSuggestions: ()                   => apiClient.get('/ai/suggestions/quick'),
+  feedback:       (data)                 => apiClient.post('/ai/feedback', data),
+  history:        ()                     => apiClient.get('/ai/history'),
+  getProfile:     ()                     => apiClient.get('/ai/profile'),
+  updateProfile:  (data)                 => apiClient.put('/ai/profile', data),
+}
+
+// ── Offers / Promo codes ────────────────────────────────────────────────────
+export const offersApi = {
+  list:         ()                           => apiClient.get('/offers'),
+  validate:     (code, subtotal, customerId) =>
+    apiClient.post('/offers/validate', { code, subtotal, customerId: customerId || null }),
+}
+
+// ── User Profile ────────────────────────────────────────────────────────────
+export const profileApi = {
+  update: (data) => apiClient.patch('/auth/profile', data),
+}
+
 // ── Health ──────────────────────────────────────────────────────────────────
 export const healthApi = {
   check: () => apiClient.get('/health'),

@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import CartDrawer from '@/components/cart/CartDrawer'
+import AIMealAssistantButton from '@/components/ai/AIMealAssistantButton'
 import ProtectedRoute from '@/components/routing/ProtectedRoute'
 import RoleRedirect from '@/components/routing/RoleRedirect'
 
@@ -20,6 +21,7 @@ import VerifyEmailPage from '@/pages/auth/VerifyEmailPage'
 import RestaurantRegisterPage from '@/pages/auth/RestaurantRegisterPage'
 
 import MyOrdersPage from '@/pages/customer/MyOrdersPage'
+import ProfilePage from '@/pages/customer/ProfilePage'
 import RestaurantsPage from '@/pages/RestaurantsPage'
 import RestaurantPublicMenuPage from '@/pages/RestaurantPublicMenuPage'
 
@@ -98,6 +100,7 @@ export default function App() {
       <ScrollToTop />
       <Navbar />
       <CartDrawer />
+      <AIMealAssistantButton />
 
       <main className="flex-1">
         <AnimatePresence mode="wait">
@@ -126,6 +129,14 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['customer']}>
                   <MyOrdersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute allowedRoles={['customer', 'restaurant', 'admin']}>
+                  <ProfilePage />
                 </ProtectedRoute>
               }
             />

@@ -4,6 +4,11 @@ const { pushToRestaurant, pushToUser } = require('../websocket/push');
 const menuService = require('./menu.service');
 const { v4: uuidv4 } = require('uuid');
 
+const GST_RATE = 0.05;          // 5%
+const PLATFORM_FEE = 10;        // ₹10 flat
+const FREE_DELIVERY_THRESHOLD = 499;
+const DELIVERY_FEE = 40;
+
 const ORDERS_TABLE = process.env.ORDERS_TABLE || 'Orders';
 
 const STATUS_MESSAGES = {
@@ -85,7 +90,31 @@ async function createOrder(orderData) {
 
   const orderId = uuidv4();
   const now     = new Date().toISOString();
-  const total   = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+  const subtotal    = parseFloat(items.reduce((sum, i) => sum + i.price * i.quantity, 0).toFixed(2));
+  const gst         = parseFloat((subtotal * GST_RATE).toFixed(2));
+  const platformFee = PLATFORM_FEE;
+
+  // Apply promo code if provided
+  let discount    = 0;
+  let freeDelivery = false;
+  let promoCode   = null;
+  if (orderData.promoCode) {
+    try {
+      const offersService = require('./offers.service');
+      const promo = await offersService.validatePromo(
+        orderData.promoCode, subtotal, orderData.customerId
+      );
+      discount     = promo.discount;
+      freeDelivery = promo.freeDelivery;
+      promoCode    = promo.code;
+    } catch (_) { /* invalid promo — ignore, don't block the order */ }
+  }
+
+  const deliveryFee = freeDelivery || subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
+  const total       = parseFloat((subtotal + gst + platformFee + deliveryFee - discount).toFixed(2));
+
+  const pricing = { subtotal, gst, platformFee, deliveryFee, discount, total };
 
   const initialStatus = 'Order Received';
   const order = {
@@ -96,7 +125,9 @@ async function createOrder(orderData) {
     address:      orderData.address,
     restaurantId,
     items,
-    total: parseFloat(total.toFixed(2)),
+    pricing,
+    total,
+    promoCode,
     status: initialStatus,
     createdAt: now,
     updatedAt: now,
