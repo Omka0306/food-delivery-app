@@ -31,19 +31,25 @@ export default function CategoryFilter({ active, onChange, categories = [] }) {
             <div
               className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl transition-all duration-200 ${
                 isActive
-                  ? 'bg-primary shadow-lg shadow-orange-200 ring-2 ring-primary ring-offset-2 scale-110'
-                  : `${cat.bg} ring-1 ring-gray-200 hover:scale-105`
+                  ? 'bg-primary shadow-md shadow-orange-300 scale-110'
+                  : `${cat.bg} hover:scale-105`
               }`}
             >
               {cat.emoji}
             </div>
+            {/* Active indicator dot */}
             <span
-              className={`text-xs font-semibold transition-colors duration-200 max-w-[4rem] text-center leading-tight ${
-                isActive ? 'text-primary' : 'text-gray-500'
+              className={`text-xs font-bold transition-colors duration-200 max-w-[4rem] text-center leading-tight ${
+                isActive ? 'text-primary' : 'text-gray-500 font-semibold'
               }`}
             >
               {cat.label.toUpperCase()}
             </span>
+            <span
+              className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
+                isActive ? 'bg-primary scale-100' : 'bg-transparent scale-0'
+              }`}
+            />
           </motion.button>
         )
       })}
