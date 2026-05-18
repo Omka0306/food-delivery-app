@@ -6,7 +6,7 @@
 
 > A production-grade, serverless food delivery platform with real-time order tracking, role-based access, promo/coupon engine, and AI-powered meal recommendations.
 
-**Live App:** https://food-delivery-app-rouge-gamma.vercel.app
+**Live App:** https://food-delivery-app-lake-eta.vercel.app
 **API Base:** https://haxew3ftcj.execute-api.ap-south-1.amazonaws.com/api
 
 ---
