@@ -34,7 +34,7 @@ export default function CheckoutPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             <div className="lg:col-span-3">
-              <CheckoutForm promoCode={promo?.code || null} />
+              <CheckoutForm promo={promo} />
             </div>
             <div className="lg:col-span-2">
               <OrderSummary onPromoChange={setPromo} />

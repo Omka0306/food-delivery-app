@@ -41,7 +41,7 @@ function FieldWrapper({ label, error, success, children }) {
   )
 }
 
-export default function CheckoutForm({ promoCode = null }) {
+export default function CheckoutForm({ promo = null }) {
   const navigate  = useNavigate()
   const { items, totalPrice, clearCart } = useCart()
   const { user, isAuthenticated } = useAuthStore()
@@ -96,7 +96,7 @@ export default function CheckoutForm({ promoCode = null }) {
           name:       i.name,
           price:      i.price,
         })),
-        ...(promoCode && { promoCode }),
+        ...(promo?.code && { promoCode: promo.code }),
       }
       return ordersApi.place(payload)
     },
@@ -110,8 +110,10 @@ export default function CheckoutForm({ promoCode = null }) {
     onError: () => toast.error('Something went wrong. Please try again.'),
   })
 
-  const deliveryFee  = totalPrice >= 499 ? 0 : 40
-  const orderTotal   = parseFloat((totalPrice + totalPrice * 0.05 + 10 + deliveryFee).toFixed(2))
+  const baseDelivery = totalPrice >= 499 ? 0 : 40
+  const deliveryFee  = promo?.freeDelivery ? 0 : baseDelivery
+  const discount     = promo?.discount || 0
+  const orderTotal   = parseFloat((totalPrice + totalPrice * 0.05 + 10 + deliveryFee - discount).toFixed(2))
 
   return (
     <form onSubmit={handleSubmit(mutate)} className="space-y-5">
