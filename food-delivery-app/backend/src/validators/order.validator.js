@@ -18,6 +18,7 @@ const createOrderSchema = Joi.object({
   address: Joi.string().min(10).max(200).required(),
   customerId: Joi.string().optional(),
   restaurantId: Joi.string().uuid().optional(),
+  promoCode: Joi.string().uppercase().optional(),
   items: Joi.array().items(orderItemSchema).min(1).required(),
 });
 
